@@ -3,13 +3,13 @@ import { Head } from '@inertiajs/react';
 import { Users, FileText, CheckCircle, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function Dashboard({ auth }) {
-    // Dummy Data untuk Widget
+export default function Dashboard({ auth, statsData, recentMembers }) {
+    // Menggunakan data dari database (statsData), dengan fallback '0' jika data kosong
     const stats = [
-        { title: 'Total Member', value: '1,240', icon: <Users size={24} />, color: 'bg-blue-500' },
-        { title: 'Modul Aktif', value: '24', icon: <FileText size={24} />, color: 'bg-emerald-500' },
-        { title: 'Lulus Ujian', value: '856', icon: <CheckCircle size={24} />, color: 'bg-teal-500' },
-        { title: 'Tingkat Kelulusan', value: '89%', icon: <TrendingUp size={24} />, color: 'bg-indigo-500' },
+        { title: 'Total Member', value: statsData?.totalMember || '0', icon: <Users size={24} />, color: 'bg-blue-500' },
+        { title: 'Modul Aktif', value: statsData?.modulAktif || '0', icon: <FileText size={24} />, color: 'bg-emerald-500' },
+        { title: 'Lulus Ujian', value: statsData?.lulusUjian || '0', icon: <CheckCircle size={24} />, color: 'bg-teal-500' },
+        { title: 'Tingkat Kelulusan', value: statsData?.tingkatKelulusan || '0%', icon: <TrendingUp size={24} />, color: 'bg-indigo-500' },
     ];
 
     return (
@@ -21,7 +21,7 @@ export default function Dashboard({ auth }) {
                 <p className="text-gray-500 mt-1">Selamat datang kembali, {auth.user.name}. Berikut ringkasan sistem hari ini.</p>
             </div>
 
-            
+            {/* Menampilkan Widget Statistik */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, index) => (
                     <motion.div 
@@ -40,7 +40,7 @@ export default function Dashboard({ auth }) {
                 ))}
             </div>
 
-            
+            {/* Menampilkan Tabel Pendaftar Terbaru */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-lg font-bold text-gray-900">Pendaftar Member Terbaru</h2>
@@ -59,33 +59,42 @@ export default function Dashboard({ auth }) {
                         </thead>
                         <tbody className="text-sm">
                             
-                            <tr className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                <td className="py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-200"></div>
-                                        <span className="font-medium text-gray-900">Ahmad Fulan</span>
-                                    </div>
-                                </td>
-                                <td className="py-4 text-gray-600">PNS</td>
-                                <td className="py-4 text-gray-600">Hari ini, 08:30</td>
-                                <td className="py-4">
-                                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Terverifikasi</span>
-                                </td>
-                            </tr>
-                            
-                            <tr className="hover:bg-gray-50 transition-colors">
-                                <td className="py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-200"></div>
-                                        <span className="font-medium text-gray-900">Siti Aminah</span>
-                                    </div>
-                                </td>
-                                <td className="py-4 text-gray-600">Guru</td>
-                                <td className="py-4 text-gray-600">Kemarin, 14:15</td>
-                                <td className="py-4">
-                                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Menunggu</span>
-                                </td>
-                            </tr>
+                            {/* Cek apakah data recentMembers ada dan tidak kosong */}
+                            {recentMembers && recentMembers.length > 0 ? (
+                                recentMembers.map((member) => (
+                                    <tr key={member.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                        <td className="py-4">
+                                            <div className="flex items-center gap-3">
+                                                {/* Menampilkan inisial huruf pertama nama di avatar */}
+                                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-500 uppercase">
+                                                    {member.name.charAt(0)}
+                                                </div>
+                                                <span className="font-medium text-gray-900">{member.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="py-4 text-gray-600">{member.pekerjaan}</td>
+                                        <td className="py-4 text-gray-600">{member.tanggal_daftar}</td>
+                                        <td className="py-4">
+                                            {/* Pewarnaan badge status dinamis menggunakan kata "Aktif" */}
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                                member.status === 'Aktif' 
+                                                ? 'bg-emerald-100 text-emerald-700' 
+                                                : 'bg-amber-100 text-amber-700'
+                                            }`}>
+                                                {member.status}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                /* Tampilan jika belum ada member yang mendaftar */
+                                <tr>
+                                    <td colSpan="4" className="py-8 text-center text-gray-500">
+                                        Belum ada pendaftar terbaru saat ini.
+                                    </td>
+                                </tr>
+                            )}
+
                         </tbody>
                     </table>
                 </div>

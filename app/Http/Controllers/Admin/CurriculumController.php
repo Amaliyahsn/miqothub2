@@ -302,4 +302,38 @@ class CurriculumController extends Controller
 
         return back();
     }
+
+public function streamPdf(Material $material)
+{
+    if (!auth()->check()) {
+        abort(403, 'Unauthorized');
+    }
+
+    // Cek file
+    if (Storage::disk('local')->exists($material->file_path)) {
+        $path = storage_path('app/' . $material->file_path);
+    } elseif (Storage::disk('public')->exists($material->file_path)) {
+        $path = storage_path('app/public/' . $material->file_path);
+    } else {
+        abort(404, "File tidak ditemukan");
+    }
+
+    return response()->file($path, [
+        'Content-Type' => 'application/pdf',
+
+        // ❗ PENTING: paksa inline (bukan download)
+        'Content-Disposition' => 'inline; filename="secured.pdf"',
+
+        // ❗ PENTING: cegah download & cache
+        'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
+
+        // ❗ PENTING: cegah iframe luar
+        'X-Frame-Options' => 'SAMEORIGIN',
+
+        // ❗ BONUS: proteksi tambahan
+        'X-Content-Type-Options' => 'nosniff',
+    ]);
+}
 }

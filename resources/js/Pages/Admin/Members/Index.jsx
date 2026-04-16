@@ -307,24 +307,55 @@ export default function Index({ auth, members, allCourses }) {
             <CreateMemberModal isOpen={createModal} onClose={() => setCreateModal(false)} />
             <EditMemberModal isOpen={editModal.isOpen} onClose={() => setEditModal({ isOpen: false, member: null })} member={editModal.member} />
 
-            <ConfirmModal isOpen={confirmModal.isOpen} onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} onConfirm={executeAction} title={confirmModal.title} message={confirmModal.message} icon={confirmModal.icon} color={confirmModal.color} isProcessing={processingAction}>
-                {confirmModal.type === 'verify' && (
-                    <div className="space-y-3 border-t border-slate-100 pt-5 mt-3 max-h-56 overflow-y-auto scrollbar-thin">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Pilih Akses Kelas yang Diaktifkan:</p>
-                        {allCourses.map(course => (
-                            <label key={course.id} className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${verifyCourseIds.includes(course.id) ? 'bg-blue-50 border-blue-200 shadow-sm' : 'bg-slate-50 border-slate-200 hover:border-blue-300'}`}>
-                                <input type="checkbox" checked={verifyCourseIds.includes(course.id)} onChange={() => {
-                                    setVerifyCourseIds(prev => prev.includes(course.id) ? prev.filter(id => id !== course.id) : [...prev, course.id]);
-                                }} className="mt-0.5 rounded text-blue-600 focus:ring-blue-500/20 w-4 h-4 cursor-pointer border-slate-300"/>
-                                <div className="flex-1">
-                                    <p className={`text-sm font-bold leading-tight mb-1 ${verifyCourseIds.includes(course.id) ? 'text-blue-900' : 'text-slate-800'}`}>{course.nama}</p>
-                                    <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Batch {course.batch} • {formatRupiah(course.harga)}</p>
-                                </div>
-                            </label>
-                        ))}
+<ConfirmModal 
+    isOpen={confirmModal.isOpen} 
+    onClose={() => setConfirmModal({ ...confirmModal, isOpen: false })} 
+    onConfirm={executeAction} 
+    title={confirmModal.title} 
+    message={confirmModal.message} 
+    icon={confirmModal.icon} 
+    color={confirmModal.color} 
+    isProcessing={processingAction}
+>
+    {confirmModal.type === 'verify' && (
+        <div className="space-y-3 border-t border-slate-100 pt-5 mt-3 max-h-56 overflow-y-auto scrollbar-thin">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
+                Paket Kelas yang akan Diaktifkan:
+            </p>
+            
+            {/* PERBAIKAN: Cari member yang sedang di-klik, lalu ambil courses dari transaksi pendingnya */}
+            {members.find(m => m.id === confirmModal.id)?.transactions?.find(t => t.status === 'pending')?.courses.map(course => (
+                <div 
+                    key={course.id} 
+                    className="flex items-start gap-3 p-3.5 rounded-xl border bg-blue-50 border-blue-200 shadow-sm"
+                >
+                    {/* Checkbox dipaksa tercentang dan tidak bisa diubah (readOnly) */}
+                    <input 
+                        type="checkbox" 
+                        checked={true} 
+                        readOnly
+                        className="mt-0.5 rounded text-blue-600 focus:ring-blue-500/20 w-4 h-4 border-slate-300 cursor-default"
+                    />
+                    <div className="flex-1">
+                        <p className="text-sm font-bold leading-tight mb-1 text-blue-900">
+                            {course.nama}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                            Batch {course.batch} • {formatRupiah(course.harga)}
+                        </p>
                     </div>
-                )}
-            </ConfirmModal>
+                </div>
+            ))}
+
+            {/* Pesan jika tidak ada transaksi pending ditemukan */}
+            {(!members.find(m => m.id === confirmModal.id)?.transactions?.find(t => t.status === 'pending')) && (
+                <p className="text-xs text-center text-slate-400 italic py-4">
+                    Data transaksi tidak ditemukan.
+                </p>
+            )}
+        </div>
+    )}
+</ConfirmModal>
         </AdminLayout>
     );
 }

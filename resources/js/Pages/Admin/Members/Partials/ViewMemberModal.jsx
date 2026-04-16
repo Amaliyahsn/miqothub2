@@ -149,27 +149,48 @@ export default function ViewMemberModal({ isOpen, onClose, member }) {
                                     </div>
 
                                     
-                                    <div>
-                                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                            <Receipt size={14} className="text-blue-500" /> 
-                                            Foto Bukti Transfer
-                                        </h4>
-                                        <div className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden relative group w-full h-64 flex items-center justify-center transition-colors hover:border-blue-300">
-                                            {transaction.bukti_url ? (
-                                                <a href={transaction.bukti_url} target="_blank" rel="noopener noreferrer" className="w-full h-full block" title="Klik untuk memperbesar gambar">
-                                                    <img src={transaction.bukti_url} alt="Bukti Struk" className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500 cursor-zoom-in" />
-                                                </a>
-                                            ) : (
-                                                <div className="text-slate-400 text-center">
-                                                    <Receipt size={32} className="mx-auto mb-2 opacity-50" />
-                                                    <p className="text-xs font-semibold">Foto bukti tidak dilampirkan</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {transaction.bukti_url && (
-                                            <p className="text-[10px] font-medium text-slate-400 mt-2 text-center">Klik pada gambar untuk melihat ukuran penuh di tab baru.</p>
+                                <div>
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Receipt size={14} className="text-blue-500" /> 
+                                        Foto Bukti Transfer
+                                    </h4>
+                                    <div className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 overflow-hidden relative group w-full h-64 flex items-center justify-center transition-colors hover:border-blue-300">
+                                        
+                                        {/* KONDISI 1: Diinput Manual Oleh Admin */}
+                                        {transaction.bukti_url && transaction.bukti_url.includes('Manual') ? (
+                                            <div className="text-slate-400 text-center px-4">
+                                                <Receipt size={32} className="mx-auto mb-3 opacity-50" />
+                                                <p className="text-sm font-semibold text-slate-500">Diinput Manual oleh Admin</p>
+                                                <p className="text-xs mt-1">Bukti fisik tidak dilampirkan</p>
+                                            </div>
+
+                                        /* KONDISI 2: Ada file gambar struk asli */
+                                        ) : transaction.bukti_url ? (
+                                            <a href={transaction.bukti_url} target="_blank" rel="noopener noreferrer" className="w-full h-full block" title="Klik untuk memperbesar gambar">
+                                                <img 
+                                                    src={transaction.bukti_url} 
+                                                    alt="Bukti Struk" 
+                                                    className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500 cursor-zoom-in" 
+                                                />
+                                            </a>
+
+                                        /* KONDISI 3: Kosong / Member belum upload */
+                                        ) : (
+                                            <div className="text-slate-400 text-center px-4">
+                                                <Receipt size={32} className="mx-auto mb-2 opacity-50" />
+                                                <p className="text-xs font-semibold text-red-400">Foto bukti tidak dilampirkan</p>
+                                            </div>
                                         )}
+
                                     </div>
+                                    
+                                    {/* Teks bantuan di bawah gambar (Hanya muncul jika kondisi ke-2 terpenuhi) */}
+                                    {transaction.bukti_url && !transaction.bukti_url.includes('Manual') && (
+                                        <p className="text-[10px] font-medium text-slate-400 mt-2 text-center">
+                                            Klik pada gambar untuk melihat ukuran penuh di tab baru.
+                                        </p>
+                                    )}
+                                </div>
 
                                 </div>
                             ) : (

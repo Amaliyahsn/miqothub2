@@ -1,3 +1,4 @@
+import AdminLayout from '@/Layouts/AdminLayout'; // TAMBAHAN 1: Import AdminLayout
 import MemberLayout from '@/Layouts/MemberLayout';
 import { Head } from '@inertiajs/react';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
@@ -5,8 +6,13 @@ import UpdateProfileInformationForm from './Partials/UpdateProfileInformationFor
 import { User, ShieldCheck, Settings } from 'lucide-react';
 
 export default function Edit({ auth, mustVerifyEmail, status }) {
+    
+    // TAMBAHAN 2: Tentukan layout mana yang dipakai berdasarkan role
+    const Layout = auth.user.role === 'admin' ? AdminLayout : MemberLayout;
+
     return (
-        <MemberLayout user={auth.user}>
+        // TAMBAHAN 3: Ganti tag <MemberLayout> menjadi <Layout>
+        <Layout user={auth.user}>
             <Head title="Pengaturan Profil" />
 
             <div className="mb-8">
@@ -56,6 +62,6 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                     </div>
                 </div>
             </div>
-        </MemberLayout>
+        </Layout>
     );
 }

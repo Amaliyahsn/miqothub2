@@ -83,7 +83,7 @@ export default function Curriculum({ auth, course }) {
                                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">Kelola Kurikulum</h1>
                             </div>
                             <p className="text-slate-500 text-sm font-medium max-w-2xl leading-relaxed mt-2">
-                                Susun alur belajar untuk kelas <strong className="text-blue-900 font-bold">{course.nama}</strong>. Tambahkan video, modul PDF, jadwal pertemuan live, hingga latihan soal.
+                                Susun alur belajar untuk kelas <strong className="text-blue-900 font-bold">{course.nama}</strong>. Tambahkan video, modul PDF, dan latihan soal.
                             </p>
                         </div>
                         <button 

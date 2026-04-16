@@ -12,22 +12,28 @@ class MemberController extends Controller
 {
 
     public function index()
-    {
-        $members = User::where('role', 'member')->with(['transactions.courses'])->latest()->get()->map(function ($member) {
-            if ($member->transactions->isNotEmpty() && $member->transactions->first()->bukti_pembayaran) {
-                $member->transactions->first()->bukti_url = asset('storage/' . $member->transactions->first()->bukti_pembayaran);
+{
+    $members = User::where('role', 'member')
+        ->with(['transactions' => function($query) {
+            // Hanya ambil transaksi yang statusnya pending untuk verifikasi
+            $query->where('status', 'pending')->with('courses');
+        }])
+        ->latest()
+        ->get()
+        ->map(function ($member) {
+            // Logika bukti_url tetap ada untuk menampilkan struk
+            $pendingTrx = $member->transactions->where('status', 'pending')->first();
+            if ($pendingTrx && $pendingTrx->bukti_pembayaran) {
+                $pendingTrx->bukti_url = asset('storage/' . $pendingTrx->bukti_pembayaran);
             }
             return $member;
         });
 
-        
-        $allCourses = \App\Models\Course::select('id', 'nama', 'harga', 'batch')->get();
-
-        return Inertia::render('Admin/Members/Index', [
-            'members' => $members,
-            'allCourses' => $allCourses 
-        ]);
-    }
+    // Kita hapus $allCourses dari sini agar React tidak punya pilihan kelas lain selain yang dibeli
+    return Inertia::render('Admin/Members/Index', [
+        'members' => $members,
+    ]);
+}
 
     
     public function store(Request $request)
@@ -58,38 +64,34 @@ class MemberController extends Controller
         return back()->with('success', 'Member baru berhasil ditambahkan secara manual.');
     }
 
-    public function verify(Request $request, User $member)
-    {
+public function verify(Request $request, User $member)
+{
+    // Aktifkan akun member
+    $member->update(['status_akun' => 'aktif']);
+
+    // Cari transaksi yang pending milik member ini
+    $transaction = Transaction::where('user_id', $member->id)
+        ->where('status', 'pending')
+        ->with('courses')
+        ->first();
+
+    if ($transaction) {
+        // 1. Update status transaksi menjadi verified
+        $transaction->update(['status' => 'verified']);
         
-        $request->validate([
-            'course_ids' => 'required|array|min:1',
-            'course_ids.*' => 'exists:courses,id',
-        ]);
+        // 2. Ambil semua ID kelas yang ada di dalam transaksi tersebut
+        // Kita tidak perlu lagi $request->course_ids karena kita pakai data dari transaksi asli
+        $courseIds = $transaction->courses->pluck('id')->toArray();
 
-        $member->update(['status_akun' => 'aktif']);
+        // 3. Update total_harga berdasarkan jumlah harga kelas di dalam transaksi itu
+        $transaction->update(['total_harga' => $transaction->courses->sum('harga')]);
 
-        $transaction = Transaction::where('user_id', $member->id)->where('status', 'pending')->first();
-
-        if ($transaction) {
-            $transaction->update(['status' => 'verified']);
-            
-            
-            $courses = \App\Models\Course::whereIn('id', $request->course_ids)->get();
-            
-            $pivotData = [];
-            foreach ($courses as $course) {
-                $pivotData[$course->id] = ['harga_saat_beli' => $course->harga];
-            }
-            
-            
-            $transaction->courses()->sync($pivotData);
-            
-            
-            $transaction->update(['total_harga' => $courses->sum('harga')]);
-        }
-
-        return back()->with('success', 'Akun diaktifkan dan kelas berhasil disesuaikan!');
+        // Opsional: Jika kamu punya sistem email yang kita bahas di awal, 
+        // taruh logic kirim email di sini.
     }
+
+    return back()->with('success', 'Pembayaran diverifikasi dan akun member telah aktif!');
+}
 
     
 

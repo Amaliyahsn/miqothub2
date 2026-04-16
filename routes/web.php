@@ -5,6 +5,8 @@ use App\Http\Controllers\AdminManagementController;
 use App\Http\Controllers\Admin\CourseController; 
 use App\Http\Controllers\Admin\MemberController; 
 use App\Http\Controllers\Admin\CurriculumController;
+use App\Http\Controllers\Admin\DashboardController; 
+use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Member\CourseController as MemberCourseController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -42,32 +44,33 @@ Route::get('/', function () {
 | Authenticated Routes (Harus Login - Berlaku untuk Member & Admin)
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes (Harus Login - Berlaku untuk Member & Admin)
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
+        // 1. Jika Admin, kita arahkan (redirect) ke route khusus admin
         if ($user->role === 'admin') {
-            return Inertia::render('Dashboard'); 
+            return redirect()->route('admin.dashboard'); 
         }
 
-        
+        // 2. Jika Member, eksekusi logic di bawah ini
         $myCourses = $user->courses()->get()->map(function ($course) {
             $course->thumbnail_url = $course->thumbnail ? asset('storage/' . $course->thumbnail) : null;
             return $course;
         });
 
-        
         $kelasAktif = $myCourses->count();
-        
         $kuisSelesai = \App\Models\ExerciseScore::where('user_id', $user->id)->count(); 
         $sertifikat = 0; 
-
-        
         
         $recentCourses = $myCourses->take(3);
 
-        
         return Inertia::render('Member/Dashboard', [
             'stats' => [
                 'kelas_aktif' => $kelasAktif,
@@ -78,12 +81,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ]);
     })->name('dashboard');
 
-    
+    // ... sisa route member lainnya biarkan sama persis ...
     Route::get('/my-courses', [MemberCourseController::class, 'index'])->name('member.courses.index');
     Route::get('/my-courses/{id}', [MemberCourseController::class, 'show'])->name('member.courses.show');
+    
 
-    
-    
+
 
     Route::get('/katalog', [MemberCourseController::class, 'catalog'])->name('member.catalog');
     Route::post('/katalog/purchase', [MemberCourseController::class, 'purchase'])->name('member.purchase');
@@ -96,6 +99,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Member\ExerciseController::class, 'show'])->name('show');
         Route::post('/verify', [\App\Http\Controllers\Member\ExerciseController::class, 'verifyPassword'])->name('verify');
         Route::post('/submit', [\App\Http\Controllers\Member\ExerciseController::class, 'submit'])->name('submit');
+
+        Route::delete('/reset', [\App\Http\Controllers\Member\ExerciseController::class, 'reset'])->name('reset');
     });
     
 
@@ -106,6 +111,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
+    // Letakkan di dalam Route::middleware(['auth', 'verified'])
+    Route::get('/materials/stream-pdf/{material}', [CurriculumController::class, 'streamPdf'])
+    ->name('materials.stream');
+
 });
 
 /*
@@ -114,6 +123,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
     Route::get('/management', [AdminManagementController::class, 'index'])->name('management.index');
     Route::post('/management', [AdminManagementController::class, 'store'])->name('management.store');
@@ -168,6 +179,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+
+    Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
     
 });
 
