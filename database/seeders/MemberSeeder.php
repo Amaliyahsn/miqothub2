@@ -12,7 +12,7 @@ class MemberSeeder extends Seeder
     {
         User::create([
             'name' => 'Member Haji 01',
-            'email' => 'member@example.com',
+            'email' => 'member@gmail.com',
             'password' => Hash::make('password'),
             'role' => 'member',
             'foto_profile' => null,

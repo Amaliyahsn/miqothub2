@@ -38,10 +38,10 @@ export default function Sidebar({ user, isOpen, onClose }) {
                 
                 <div className="h-20 flex items-center px-8 border-b border-slate-100/60 bg-white/50 backdrop-blur-sm">
                     <Link href="/" className="flex items-center gap-3 text-2xl font-black text-slate-800 tracking-tight">
-                        <div className="p-2 bg-gradient-to-tr from-blue-950 to-blue-600 rounded-xl shadow-lg shadow-blue-900/20">
-                            <ShieldCheck size={24} className="text-white" strokeWidth={2.5} />
+                    <div className="p-2 bg-blue-900 rounded-lg text-white shadow-md shadow-blue-900/20">
+                            <BookOpen size={20} strokeWidth={2.5} />
                         </div>
-                        Haji<span className="text-blue-700">Course</span>
+                        Miqot<span className="text-blue-700">Course</span>
                     </Link>
                 </div>
 

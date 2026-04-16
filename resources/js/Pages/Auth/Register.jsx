@@ -229,7 +229,7 @@ export default function Register({ courses }) {
                                         <select value={data.status} onChange={e => setData('status', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-semibold appearance-none cursor-pointer outline-none transition-colors" required>
                                             <option value="" disabled>Pilih...</option>
                                             <option value="menikah">Menikah</option>
-                                            <option value="belum">Belum</option>
+                                            <option value="belum">Belum Menikah</option>
                                         </select>
                                     </div>
                                     {errors.status && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.status}</p>}
