@@ -16,7 +16,6 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    
     $courses = \App\Models\Course::where('status', 'onsale')
         ->with(['chapters.materials' => function ($query) {
             $query->where('is_preview', true);
@@ -27,10 +26,14 @@ Route::get('/', function () {
             return $course;
         });
 
+    // Ambil data dari tabel settings agar tidak error "undefined" di React
+    $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'courses' => $courses, 
+        'settings' => $settings, // Kirim ke Welcome.jsx
     ]);
 })->name('welcome');
 

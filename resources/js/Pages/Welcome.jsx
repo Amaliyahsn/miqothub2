@@ -97,17 +97,17 @@ export default function Welcome({ auth, courses = [] }) {
                     </motion.div>
                     
                     <motion.div variants={fadeUpVariant}>
-                        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight mb-4 md:mb-6 text-slate-900 leading-[1.15]">
-                            Tingkatkan Kapasitas <br className="hidden sm:block" />
-                            <span className="text-blue-600">
-                                Keilmuan Anda.
+                        <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight mb-4 md:mb-6 text-slate-900 leading-tight text-center">
+                            Bantu Kamu Lolos TKH & PPIH <br className="hidden sm:block" />
+                            <span className="block text-blue-600 text-2xl sm:text-3xl md:text-5xl mt-2">
+                                Siap Berangkat ke Tanah Suci! 
                             </span>
                         </h1>
                     </motion.div>
 
                     <motion.div variants={fadeUpVariant}>
-                        <p className="text-base sm:text-lg text-slate-500 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed px-2">
-                            Akses materi komprehensif, evaluasi terstruktur, dan pemantauan progres belajar yang terintegrasi penuh untuk pengalaman belajar terbaik.
+                        <p className="text-sm sm:text-base md:text-lg text-slate-500 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed text-center px-4">
+                            Materi disusun sederhana, mudah dipahami, dan langsung bisa digunakan dalam situasi nyata.
                         </p>
                     </motion.div>
 
@@ -204,12 +204,33 @@ export default function Welcome({ auth, courses = [] }) {
                                             <span className="text-2xl sm:text-3xl font-black text-slate-900">{formatRupiah(course.harga)}</span>
                                         </div>
 
-                                        <div className="flex-1 space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                                            <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Akses penuh Modul & Video materi</span></div>
-                                            <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Latihan Soal (CBT) & evaluasi instan</span></div>
-                                            {course.link_grup_wa && <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Grup Diskusi & Mentoring eksklusif</span></div>}
-                                            <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Sertifikat Digital (e-Certificate)</span></div>
-                                        </div>
+<div className="flex-1 space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
+    {(() => {
+        let fiturList = [];
+        try {
+            fiturList = typeof course.fitur === 'string'
+                ? JSON.parse(course.fitur)
+                : (Array.isArray(course.fitur) ? course.fitur : []);
+        } catch (e) {
+            fiturList = [];
+        }
+
+        return fiturList.length > 0
+            ? fiturList.map((item, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                    <CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" />
+                    <span className="text-xs sm:text-sm text-slate-600">{item}</span>
+                </div>
+            ))
+            : (
+                <>
+                    <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Akses penuh Modul & Video materi</span></div>
+                    <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Latihan Soal (CBT) & evaluasi instan</span></div>
+                    <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Sertifikat Digital (e-Certificate)</span></div>
+                </>
+            );
+    })()}
+</div>
 
                                         <Link href={auth?.user ? route('member.catalog') : route('register')} className="w-full py-3 sm:py-3.5 bg-slate-900 text-white rounded-xl font-semibold text-sm sm:text-base text-center hover:bg-blue-600 transition-colors duration-300 shadow-md">
                                             Daftar Sekarang
@@ -338,6 +359,29 @@ export default function Welcome({ auth, courses = [] }) {
                     </div>
                 )}
             </AnimatePresence>
+
+                        <a
+                href="https://wa.me/6285746645059?text=Halo%20Admin%2C%20saya%20ingin%20bertanya%20tentang%20kelas"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="fixed bottom-5 right-5 z-[999] group"
+            >
+                <div className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg transition-all duration-300">
+                    
+                    <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="w-5 h-5"
+                        fill="currentColor" 
+                        viewBox="0 0 24 24"
+                    >
+                        <path d="M20.52 3.48A11.82 11.82 0 0012.01 0C5.38 0 .02 5.36.02 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.21-1.63a11.9 11.9 0 005.8 1.48h.01c6.63 0 11.99-5.36 11.99-11.98 0-3.2-1.25-6.2-3.49-8.39z"/>
+                    </svg>
+
+                    <span className="hidden sm:inline text-sm font-semibold">
+                        Hubungi Admin
+                    </span>
+                </div>
+            </a>
         </div>
     );
 }
