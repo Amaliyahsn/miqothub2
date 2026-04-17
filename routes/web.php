@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\MemberController;
 use App\Http\Controllers\Admin\CurriculumController;
 use App\Http\Controllers\Admin\DashboardController; 
 use App\Http\Controllers\Admin\FinanceController;
+use App\Http\Controllers\Member\ReviewController;
 use App\Http\Controllers\Member\CourseController as MemberCourseController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -17,7 +18,13 @@ use Inertia\Inertia;
 | Public Routes (Bisa diakses siapa saja)
 |--------------------------------------------------------------------------
 */
+/*
+|--------------------------------------------------------------------------
+| Public Routes (Bisa diakses siapa saja)
+|--------------------------------------------------------------------------
+*/
 Route::get('/', function () {
+    // 1. Ambil Data Courses
     $courses = \App\Models\Course::where('status', 'onsale')
         ->with(['chapters.materials' => function ($query) {
             $query->where('is_preview', true);
@@ -28,22 +35,27 @@ Route::get('/', function () {
             return $course;
         });
 
-    // Ambil data dari tabel settings agar tidak error "undefined" di React
+    // 2. Ambil Data Ulasan/Reviews (Tambahan Baru)
+    // Kita ambil review yang punya rating 4 atau 5, dan sudah ditandai tampil_di_landing
+    $reviews = \App\Models\Review::with('user:id,name') // Hanya ambil id dan nama user untuk keamanan
+        ->where('tampilkan_di_landing', true)
+        ->where('rating', '>=', 4)
+        ->latest()
+        ->take(6) // Batasi 6 review terbaru saja agar tidak berat
+        ->get();
+
+    // 3. Ambil data dari tabel settings
     $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
         'courses' => $courses, 
-        'settings' => $settings, // Kirim ke Welcome.jsx
+        'settings' => $settings,
+        'reviews' => $reviews, // KIRIM DATA REVIEW KE REACT
     ]);
 })->name('welcome');
 
-/*
-|--------------------------------------------------------------------------
-| Authenticated Routes (Harus Login - Berlaku untuk Member & Admin)
-|--------------------------------------------------------------------------
-*/
 /*
 |--------------------------------------------------------------------------
 | Authenticated Routes (Harus Login - Berlaku untuk Member & Admin)
@@ -114,6 +126,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Letakkan di dalam Route::middleware(['auth', 'verified'])
     Route::get('/materials/stream-pdf/{material}', [CurriculumController::class, 'streamPdf'])
     ->name('materials.stream');
+
+    Route::post('/member/reviews', [ReviewController::class, 'store'])->name('member.reviews.store');
 
 });
 

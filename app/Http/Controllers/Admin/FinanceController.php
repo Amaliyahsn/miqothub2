@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use App\Models\Transaction; // Sesuaikan jika nama model transaksimu berbeda
+use App\Models\Transaction; 
 use Carbon\Carbon;
 
 class FinanceController extends Controller
@@ -14,17 +14,19 @@ class FinanceController extends Controller
     {
         $today = Carbon::today();
         
-        // Asumsi kolom total harga adalah 'total_harga' dan status yang sah adalah 'approved'
-        $pendapatanHariIni = Transaction::where('status', 'approved')->whereDate('created_at', $today)->sum('total_harga');
-        $pendapatanMingguIni = Transaction::where('status', 'approved')->whereBetween('created_at', [$today->copy()->startOfWeek(), $today->copy()->endOfWeek()])->sum('total_harga');
-        $pendapatanBulanIni = Transaction::where('status', 'approved')->whereMonth('created_at', $today->month)->whereYear('created_at', $today->year)->sum('total_harga');
-        $pendapatanTahunIni = Transaction::where('status', 'approved')->whereYear('created_at', $today->year)->sum('total_harga');
+        // PERBAIKAN 1: Ubah 'approved' menjadi 'verified' sesuai Model Database kamu
+        $pendapatanHariIni = Transaction::where('status', 'verified')->whereDate('created_at', $today)->sum('total_harga');
+        $pendapatanMingguIni = Transaction::where('status', 'verified')->whereBetween('created_at', [$today->copy()->startOfWeek(), $today->copy()->endOfWeek()])->sum('total_harga');
+        $pendapatanBulanIni = Transaction::where('status', 'verified')->whereMonth('created_at', $today->month)->whereYear('created_at', $today->year)->sum('total_harga');
+        $pendapatanTahunIni = Transaction::where('status', 'verified')->whereYear('created_at', $today->year)->sum('total_harga');
 
         // DATA GRAFIK 7 HARI TERAKHIR
         $chartData = [];
         for ($i = 6; $i >= 0; $i--) {
             $date = Carbon::today()->subDays($i);
-            $total = Transaction::where('status', 'approved')->whereDate('created_at', $date)->sum('total_harga');
+            
+            // PERBAIKAN 1: Ubah 'approved' menjadi 'verified'
+            $total = Transaction::where('status', 'verified')->whereDate('created_at', $date)->sum('total_harga');
             
             $chartData[] = [
                 'name' => $date->translatedFormat('d M'), 
@@ -32,6 +34,8 @@ class FinanceController extends Controller
             ];
         }
 
+        // PERBAIKAN 2: Tambahkan 'Admin/' di depan 'Finance' agar Inertia bisa menemukan file React-nya
+        // (Asumsi file Finance.jsx kamu ada di folder resources/js/Pages/Admin/)
         return Inertia::render('Finance', [
             'keuangan' => [
                 'hari_ini' => $pendapatanHariIni,

@@ -7,6 +7,9 @@ use App\Models\Course;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+// TAMBAHAN: Import Mail dan Mailable
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AdminPaymentNotification;
 
 class CourseController extends Controller
 {
@@ -28,15 +31,12 @@ class CourseController extends Controller
     {
         $user = Auth::user();
         
-        
         $hasCourse = $user->courses()->where('courses.id', $id)->exists();
 
         if (!$hasCourse) {
-            
             abort(403, 'Akses Ditolak. Anda belum membeli atau menyelesaikan pembayaran untuk kelas ini.');
         }
 
-        
         $course = Course::with(['chapters' => function($query) {
             $query->orderBy('created_at', 'asc'); 
         }, 'chapters.materials' => function($query) {
@@ -53,7 +53,6 @@ class CourseController extends Controller
     {
         $user = auth()->user();
         
-        
         $ownedCourseIds = \App\Models\Transaction::where('user_id', $user->id)
             ->whereIn('status', ['verified', 'pending'])
             ->with('courses')
@@ -63,7 +62,6 @@ class CourseController extends Controller
             ->unique()
             ->toArray();
 
-        
         $availableCourses = \App\Models\Course::where('status', 'onsale')
             ->whereNotIn('id', $ownedCourseIds)
             ->get()
@@ -97,6 +95,19 @@ class CourseController extends Controller
         ]);
 
         $transaction->courses()->attach($course->id, ['harga_saat_beli' => $course->harga]);
+
+        // ==========================================
+        // FITUR BARU: KIRIM EMAIL KE ADMIN
+        // ==========================================
+        $dataEmail = [
+            'nama_member' => auth()->user()->name,
+            'nama_kelas' => $course->nama,
+            'metode_pembayaran' => $request->payment_method ?? 'Transfer/QRIS',
+        ];
+
+        // Mengirim email ke email Admin
+        Mail::to('amaliyahsyahidatunnimah27@gmail.com')->send(new AdminPaymentNotification($dataEmail));
+        // ==========================================
 
         return redirect()->route('dashboard')->with('success', 'Pengajuan kelas berhasil dikirim! Mohon tunggu Admin memverifikasi bukti transfer Anda.');
     }

@@ -3,10 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { 
     BookOpen, ShieldCheck, MessageSquareShare, Award, 
-    ArrowRight, Sparkles, CheckCircle2, PlayCircle, FileText, X, ChevronRight, Play
+    ArrowRight, Sparkles, CheckCircle2, PlayCircle, FileText, X, ChevronRight, Play,
+    Star // <--- TAMBAHKAN INI
 } from 'lucide-react';
 
-export default function Welcome({ auth, courses = [] }) {
+// Tambahkan app_settings di sini
+export default function Welcome({ auth, courses = [], app_settings = {}, reviews = [] }) { 
+    // Tambahkan reviews = [] di atas
     
     const [activePreview, setActivePreview] = useState(null);
 
@@ -56,8 +59,8 @@ export default function Welcome({ auth, courses = [] }) {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans selection:bg-blue-500 selection:text-white relative overflow-x-hidden scroll-smooth">
-            <Head title="MiqotHub - Platform Pembelajaran Digital" />
+        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] selection:bg-blue-500 selection:text-white relative overflow-x-hidden scroll-smooth">
+            <Head title="Platform Pembelajaran Digital" />
 
             
             <div className="absolute top-0 w-full h-[70vh] bg-gradient-to-b from-white via-blue-50/40 to-[#F8FAFC] z-0 pointer-events-none"></div>
@@ -69,7 +72,7 @@ export default function Welcome({ auth, courses = [] }) {
                         <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-sm">
                             <BookOpen size={18} strokeWidth={2.5} />
                         </div>
-                        Miqot<span className="text-blue-600">Hub.</span>
+                        Miqot<span className="text-blue-600">Hub</span>
                     </motion.div>
 
                     <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }} className="flex items-center gap-2 sm:gap-4">
@@ -90,36 +93,109 @@ export default function Welcome({ auth, courses = [] }) {
             </nav>
 
             
-            <main className="relative z-10 flex flex-col items-center justify-center min-h-[85vh] px-4 sm:px-6 pt-28 pb-16 md:pt-36 md:pb-20">
-                <motion.div className="text-center max-w-4xl mx-auto" variants={staggerContainer} initial="hidden" animate="visible">
-                    <motion.div variants={fadeUpVariant} className="mb-5 md:mb-6 inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-white border border-slate-200 shadow-sm text-slate-600 text-[10px] sm:text-xs font-bold tracking-wider uppercase">
-                        <Sparkles size={14} className="text-amber-500" /> Platform Edukasi Digital
-                    </motion.div>
+          {/* HERO SECTION - LAYOUT SEPERTI GAMBAR */}
+            <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-32 pb-16 md:pt-44 md:pb-32">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-12 md:gap-16">
                     
-                    <motion.div variants={fadeUpVariant}>
-                        <h1 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight mb-4 md:mb-6 text-slate-900 leading-tight text-center">
-                            Bantu Kamu Lolos TKH & PPIH <br className="hidden sm:block" />
-                            <span className="block text-blue-600 text-2xl sm:text-3xl md:text-5xl mt-2">
-                                Siap Berangkat ke Tanah Suci! 
-                            </span>
-                        </h1>
+                    {/* SISI KIRI: TEXT CONTENT */}
+                    <motion.div 
+                        className="flex-1 text-center lg:text-left"
+                        variants={staggerContainer} 
+                        initial="hidden" 
+                        animate="visible"
+                    >
+                        <motion.div variants={fadeUpVariant} className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] sm:text-xs font-bold tracking-wider uppercase">
+                            <Sparkles size={14} className="text-amber-500" /> Platform Edukasi Digital
+                        </motion.div>
+                        
+                        <motion.h1 variants={fadeUpVariant} className="text-[32px] leading-[1.1] sm:text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-6">
+                            Bantu Kamu Lolos <br /> 
+                            <span className="text-blue-600">TKH & PPIH</span> <br />
+                            Secara Efektif
+                        </motion.h1>
+
+                        <motion.p variants={fadeUpVariant} className="text-sm sm:text-lg text-slate-500 mb-10 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                            Materi disusun sederhana, mudah dipahami, dan langsung bisa digunakan dalam situasi nyata untuk persiapan ke Tanah Suci.
+                        </motion.p>
+
+                        <motion.div variants={fadeUpVariant} className="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-4">
+                            <a href="#pricelist" className="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all duration-300 shadow-xl shadow-blue-600/20 flex items-center justify-center gap-2 group text-sm sm:text-base">
+                                Daftar Sekarang <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                            </a>
+                            <a href="https://wa.me/..." className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-2xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-sm sm:text-base">
+                                <PlayCircle size={20} className="text-blue-600" /> Lihat Demo
+                            </a>
+                        </motion.div>
                     </motion.div>
 
-                    <motion.div variants={fadeUpVariant}>
-                        <p className="text-sm sm:text-base md:text-lg text-slate-500 mb-8 md:mb-10 max-w-2xl mx-auto leading-relaxed text-center px-4">
-                            Materi disusun sederhana, mudah dipahami, dan langsung bisa digunakan dalam situasi nyata.
-                        </p>
-                    </motion.div>
+                    {/* SISI KANAN: ILUSTRASI DENGAN FLOATING CARDS (SESUAI GAMBAR) */}
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.8, delay: 0.2 }}
+                        className="flex-1 relative w-full max-w-[500px] lg:max-w-none flex justify-center lg:justify-end"
+                    >
+                        <div className="relative">
+                            {/* Lingkaran Dekorasi Background (Ungu/Biru) */}
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] sm:w-[450px] sm:h-[450px] bg-blue-600/10 rounded-full border-2 border-dashed border-blue-200 animate-[spin_20s_linear_infinite]"></div>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] sm:w-[380px] sm:h-[380px] bg-gradient-to-tr from-blue-600 to-indigo-400 rounded-full opacity-20 blur-2xl"></div>
 
-                    <motion.div variants={fadeUpVariant} className="flex flex-col sm:flex-row justify-center items-center gap-3 sm:gap-4 w-full sm:w-auto px-4 sm:px-0">
-                        <a href="#pricelist" className="w-full sm:w-auto px-6 sm:px-8 py-3.5 bg-slate-900 text-white rounded-full font-semibold hover:bg-blue-600 transition-colors duration-300 shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 group text-sm sm:text-base">
-                            Lihat Pilihan Kelas <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
-                        </a>
-                        <a href="#fitur" className="w-full sm:w-auto px-6 sm:px-8 py-3.5 bg-white text-slate-600 border border-slate-200 rounded-full font-semibold hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 transition-colors duration-300 flex items-center justify-center text-sm sm:text-base">
-                            Pelajari Fitur
-                        </a>
+                            {/* Foto Utama (Ganti src dengan foto perawat/petugas haji/wanita berhijab) */}
+                            <img 
+                                src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?q=80&w=1000&auto=format&fit=crop" 
+                                alt="Student" 
+                                className="relative z-10 w-[280px] sm:w-[400px] h-auto object-cover drop-shadow-2xl"
+                            />
+
+                            {/* Floating Card 1: 50+ Materi */}
+                            <motion.div 
+                                animate={{ y: [0, -10, 0] }}
+                                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                                className="absolute top-10 -left-6 sm:-left-12 z-20 bg-white p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3"
+                            >
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-amber-50 rounded-lg flex items-center justify-center text-amber-500">
+                                    <BookOpen size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] sm:text-xs font-black text-slate-900 leading-none">50+</p>
+                                    <p className="text-[8px] sm:text-[10px] text-slate-500 font-bold">MATERI VIDEO</p>
+                                </div>
+                            </motion.div>
+
+                            {/* Floating Card 2: 120+ Alumni */}
+                            <motion.div 
+                                animate={{ y: [0, 10, 0] }}
+                                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                                className="absolute top-1/2 -right-6 sm:-right-10 z-20 bg-white p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-100 flex flex-col gap-2"
+                            >
+                                <p className="text-[10px] sm:text-xs font-black text-slate-900 leading-none">120+ Alumni</p>
+                                <div className="flex -space-x-2">
+                                    {[1,2,3].map(i => (
+                                        <div key={i} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-200 border-2 border-white overflow-hidden">
+                                            <img src={`https://i.pravatar.cc/100?img=${i+10}`} alt="avatar" />
+                                        </div>
+                                    ))}
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center text-[8px] text-white font-bold border-2 border-white">+</div>
+                                </div>
+                            </motion.div>
+
+                            {/* Floating Card 3: Exercise */}
+                            <motion.div 
+                                animate={{ x: [0, 10, 0] }}
+                                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                                className="absolute bottom-10 left-0 z-20 bg-white p-3 sm:p-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-3"
+                            >
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-500">
+                                    <ShieldCheck size={20} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] sm:text-xs font-black text-slate-900 leading-none">CBT Sistem</p>
+                                    <p className="text-[8px] sm:text-[10px] text-slate-500 font-bold">LATIHAN SOAL</p>
+                                </div>
+                            </motion.div>
+                        </div>
                     </motion.div>
-                </motion.div>
+                </div>
             </main>
 
             
@@ -167,81 +243,93 @@ export default function Welcome({ auth, courses = [] }) {
             )}
 
             
-            <section id="pricelist" className="relative z-10 py-16 md:py-24 bg-[#F8FAFC]">
-                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={staggerContainer} className="max-w-7xl mx-auto px-4 sm:px-6">
-                    <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-10 md:mb-12 gap-4 text-center md:text-left">
-                        <div>
-                            <motion.h2 variants={fadeUpVariant} className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2">Program Kelas</motion.h2>
-                            <motion.p variants={fadeUpVariant} className="text-slate-500 text-sm sm:text-base">Pilih program komprehensif yang sesuai dengan kebutuhan Anda.</motion.p>
+           <section id="pricelist" className="relative z-10 py-16 md:py-24 bg-[#F8FAFC]">
+    <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-50px" }} variants={staggerContainer} className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-10 md:mb-12 gap-4 text-center md:text-left">
+            <div>
+                <motion.h2 variants={fadeUpVariant} className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2">Program Kelas</motion.h2>
+                <motion.p variants={fadeUpVariant} className="text-slate-500 text-sm sm:text-base">Pilih program komprehensif yang sesuai dengan kebutuhan Anda.</motion.p>
+            </div>
+        </div>
+
+        {courses.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-[2rem] border border-slate-200 shadow-sm mx-2 sm:mx-0">
+                <BookOpen size={40} className="mx-auto text-slate-300 mb-4" />
+                <h3 className="text-lg font-bold text-slate-500">Belum Ada Kelas yang Tersedia</h3>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {courses.map((course, idx) => (
+                    <motion.div 
+                        key={course.id} 
+                        variants={fadeUpVariant} 
+                        // Efek Glassmorphism: Background biru sangat muda transparan + blur + border putih tipis
+                        className="bg-gradient-to-br from-blue-50/80 via-white/90 to-blue-50/50 backdrop-blur-md rounded-[2rem] border border-white p-3 shadow-xl shadow-blue-900/5 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-500 flex flex-col group"
+                    >
+                        {/* Area Thumbnail */}
+                        <div className="relative h-48 sm:h-56 rounded-[1.5rem] overflow-hidden bg-slate-100 shadow-inner">
+                            {course.thumbnail_url ? (
+                                <img src={course.thumbnail_url} alt={course.nama} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-blue-100/30"><BookOpen size={40} className="text-blue-200" /></div>
+                            )}
+                            <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                                <span className="px-3 py-1.5 bg-blue-900/90 backdrop-blur-md rounded-lg text-[10px] sm:text-xs font-bold text-white shadow-lg border border-white/20">Batch {course.batch}</span>
+                            </div>
                         </div>
-                    </div>
 
-                    {courses.length === 0 ? (
-                        <div className="text-center py-16 bg-white rounded-[2rem] border border-slate-200 shadow-sm mx-2 sm:mx-0">
-                            <BookOpen size={40} className="mx-auto text-slate-300 mb-4" />
-                            <h3 className="text-lg font-bold text-slate-500">Belum Ada Kelas yang Tersedia</h3>
+                        {/* Konten */}
+                        <div className="p-5 sm:p-6 flex flex-col flex-1">
+                            <h3 className="text-lg sm:text-xl font-bold text-blue-950 leading-snug mb-3 line-clamp-2 group-hover:text-blue-700 transition-colors">{course.nama}</h3>
+                            
+                            <div className="mb-5 sm:mb-6 flex flex-col gap-0.5 pb-5 sm:pb-6 border-b border-blue-100/50">
+                                {course.harga_coret > 0 && <span className="text-xs sm:text-sm font-medium text-slate-400 line-through decoration-slate-300">{formatRupiah(course.harga_coret)}</span>}
+                                <span className="text-2xl sm:text-3xl font-black text-blue-900 drop-shadow-sm">{formatRupiah(course.harga)}</span>
+                            </div>
+
+                            <div className="flex-1 space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
+                                {(() => {
+                                    let fiturList = [];
+                                    try {
+                                        fiturList = typeof course.fitur === 'string'
+                                            ? JSON.parse(course.fitur)
+                                            : (Array.isArray(course.fitur) ? course.fitur : []);
+                                    } catch (e) {
+                                        fiturList = [];
+                                    }
+
+                                    return fiturList.length > 0
+                                        ? fiturList.map((item, i) => (
+                                            <div key={i} className="flex items-start gap-2.5">
+                                                <div className="bg-blue-100 rounded-full p-0.5 mt-0.5">
+                                                    <CheckCircle2 size={14} className="text-blue-600 shrink-0" />
+                                                </div>
+                                                <span className="text-xs sm:text-sm text-slate-600 font-medium">{item}</span>
+                                            </div>
+                                        ))
+                                        : (
+                                            <>
+                                                <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Akses penuh Modul & Video materi</span></div>
+                                                <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Latihan Soal (CBT) & evaluasi instan</span></div>
+                                            </>
+                                        );
+                                })()}
+                            </div>
+
+                            <Link 
+                                href={auth?.user ? route('member.catalog') : route('register')} 
+                                // Tombol disesuaikan warnanya agar kontras dengan card glossy
+                                className="w-full py-3.5 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-xl font-bold text-sm sm:text-base text-center hover:from-blue-700 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-900/10 active:scale-[0.98]"
+                            >
+                                Daftar Sekarang
+                            </Link>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                            {courses.map((course, idx) => (
-                                <motion.div key={course.id} variants={fadeUpVariant} className="bg-white rounded-[2rem] border border-slate-200 p-2 shadow-sm hover:shadow-xl hover:shadow-slate-200 transition-all duration-300 flex flex-col group">
-                                    <div className="relative h-48 sm:h-56 rounded-[1.5rem] overflow-hidden bg-slate-100">
-                                        {course.thumbnail_url ? (
-                                            <img src={course.thumbnail_url} alt={course.nama} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-blue-50"><BookOpen size={40} className="text-blue-200" /></div>
-                                        )}
-                                        <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                                            <span className="px-3 py-1.5 bg-white/95 backdrop-blur-md rounded-lg text-[10px] sm:text-xs font-bold text-slate-900 shadow-sm">Batch {course.batch}</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-5 sm:p-6 flex flex-col flex-1">
-                                        <h3 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">{course.nama}</h3>
-                                        
-                                        <div className="mb-5 sm:mb-6 flex flex-col gap-0.5 pb-5 sm:pb-6 border-b border-slate-100">
-                                            {course.harga_coret > 0 && <span className="text-xs sm:text-sm font-medium text-slate-400 line-through decoration-slate-300">{formatRupiah(course.harga_coret)}</span>}
-                                            <span className="text-2xl sm:text-3xl font-black text-slate-900">{formatRupiah(course.harga)}</span>
-                                        </div>
-
-<div className="flex-1 space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-    {(() => {
-        let fiturList = [];
-        try {
-            fiturList = typeof course.fitur === 'string'
-                ? JSON.parse(course.fitur)
-                : (Array.isArray(course.fitur) ? course.fitur : []);
-        } catch (e) {
-            fiturList = [];
-        }
-
-        return fiturList.length > 0
-            ? fiturList.map((item, i) => (
-                <div key={i} className="flex items-start gap-2.5">
-                    <CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" />
-                    <span className="text-xs sm:text-sm text-slate-600">{item}</span>
-                </div>
-            ))
-            : (
-                <>
-                    <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Akses penuh Modul & Video materi</span></div>
-                    <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Latihan Soal (CBT) & evaluasi instan</span></div>
-                    <div className="flex items-start gap-2.5"><CheckCircle2 size={18} className="text-blue-500 shrink-0 mt-0.5" /><span className="text-xs sm:text-sm text-slate-600">Sertifikat Digital (e-Certificate)</span></div>
-                </>
-            );
-    })()}
-</div>
-
-                                        <Link href={auth?.user ? route('member.catalog') : route('register')} className="w-full py-3 sm:py-3.5 bg-slate-900 text-white rounded-xl font-semibold text-sm sm:text-base text-center hover:bg-blue-600 transition-colors duration-300 shadow-md">
-                                            Daftar Sekarang
-                                        </Link>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </motion.div>
-            </section>
+                    </motion.div>
+                ))}
+            </div>
+        )}
+    </motion.div>
+</section>
 
             
             <section id="fitur" className="relative z-10 py-16 md:py-24 bg-white border-t border-slate-100">
@@ -268,6 +356,46 @@ export default function Welcome({ auth, courses = [] }) {
                             </motion.div>
                         ))}
                     </div>
+                </motion.div>
+            </section>
+
+{/* --- TESTIMONY SECTION WITH DARK MESH GRADIENT --- */}
+            <section id="testimoni" className="relative z-10 py-16 md:py-24 bg-slate-900 overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]"></div>
+                <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-blue-600/20 blur-[120px] rounded-full"></div>
+
+                <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={staggerContainer} className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+                    <div className="text-center mb-12 md:mb-16">
+                        <motion.span variants={fadeUpVariant} className="text-blue-400 font-bold uppercase tracking-widest text-[10px] sm:text-sm mb-2 block">Testimoni</motion.span>
+                        <motion.h2 variants={fadeUpVariant} className="text-3xl sm:text-4xl md:text-5xl font-black text-white mb-3">Apa Kata Mereka?</motion.h2>
+                        <motion.p variants={fadeUpVariant} className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">Pengalaman nyata dari mereka yang telah bergabung di MiqotHub.</motion.p>
+                    </div>
+
+                    {reviews.length === 0 ? (
+                        <div className="text-center text-slate-500 italic text-sm">Belum ada ulasan saat ini.</div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {reviews.map((review, idx) => (
+                                <motion.div key={idx} variants={fadeUpVariant} className="bg-slate-800/40 backdrop-blur-md p-8 rounded-[2rem] border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300">
+                                    <div className="flex gap-1 mb-6">
+                                        {[...Array(5)].map((_, i) => (
+                                            <Star key={i} size={18} className={i < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-600"} strokeWidth={2}/>
+                                        ))}
+                                    </div>
+                                    <p className="text-slate-300 text-sm leading-relaxed mb-8 italic">"{review.komentar}"</p>
+                                    <div className="flex items-center gap-4 pt-6 border-t border-slate-700/50">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-sm uppercase shadow-lg shadow-blue-500/20">
+                                            {review.user.name.substring(0, 2)}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-white text-sm">{review.user.name}</h4>
+                                            <p className="text-blue-400 text-[10px] uppercase tracking-widest font-bold">Alumni Member</p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
                 </motion.div>
             </section>
             
@@ -360,28 +488,30 @@ export default function Welcome({ auth, courses = [] }) {
                 )}
             </AnimatePresence>
 
-                        <a
-                href="https://wa.me/6285746645059?text=Halo%20Admin%2C%20saya%20ingin%20bertanya%20tentang%20kelas"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="fixed bottom-5 right-5 z-[999] group"
-            >
-                <div className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-full shadow-lg transition-all duration-300">
-                    
-                    <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="w-5 h-5"
-                        fill="currentColor" 
-                        viewBox="0 0 24 24"
-                    >
-                        <path d="M20.52 3.48A11.82 11.82 0 0012.01 0C5.38 0 .02 5.36.02 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.21-1.63a11.9 11.9 0 005.8 1.48h.01c6.63 0 11.99-5.36 11.99-11.98 0-3.2-1.25-6.2-3.49-8.39z"/>
-                    </svg>
+                        {/* Floating WhatsApp Button */}
+<a
+    href={`https://wa.me/${app_settings?.wa_admin || ' '}?text=${encodeURIComponent(
+        app_settings?.wa_message || "Halo Admin, saya ingin bertanya tentang kelas di MiqotHub"
+    )}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="fixed bottom-5 right-5 z-[999] group active:scale-90 transition-transform"
+>
+    <div className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-full shadow-lg transition-all duration-300">
+        <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className="w-5 h-5"
+            fill="currentColor" 
+            viewBox="0 0 24 24"
+        >
+            <path d="M20.52 3.48A11.82 11.82 0 0012.01 0C5.38 0 .02 5.36.02 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.21-1.63a11.9 11.9 0 005.8 1.48h.01c6.63 0 11.99-5.36 11.99-11.98 0-3.2-1.25-6.2-3.49-8.39z"/>
+        </svg>
 
-                    <span className="hidden sm:inline text-sm font-semibold">
-                        Hubungi Admin
-                    </span>
-                </div>
-            </a>
+        <span className="hidden sm:inline text-sm font-semibold">
+            Hubungi Admin
+        </span>
+    </div>
+</a>
         </div>
     );
 }

@@ -7,33 +7,36 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+// TAMBAHAN: Import class Mail untuk kirim email
+use Illuminate\Support\Facades\Mail;
+use App\Mail\MemberPaymentAccepted;
 
 class MemberController extends Controller
 {
 
     public function index()
-{
-    $members = User::where('role', 'member')
-        ->with(['transactions' => function($query) {
-            // Hanya ambil transaksi yang statusnya pending untuk verifikasi
-            $query->where('status', 'pending')->with('courses');
-        }])
-        ->latest()
-        ->get()
-        ->map(function ($member) {
-            // Logika bukti_url tetap ada untuk menampilkan struk
-            $pendingTrx = $member->transactions->where('status', 'pending')->first();
-            if ($pendingTrx && $pendingTrx->bukti_pembayaran) {
-                $pendingTrx->bukti_url = asset('storage/' . $pendingTrx->bukti_pembayaran);
-            }
-            return $member;
-        });
+    {
+        $members = User::where('role', 'member')
+            ->with(['transactions' => function($query) {
+                // Hanya ambil transaksi yang statusnya pending untuk verifikasi
+                $query->where('status', 'pending')->with('courses');
+            }])
+            ->latest()
+            ->get()
+            ->map(function ($member) {
+                // Logika bukti_url tetap ada untuk menampilkan struk
+                $pendingTrx = $member->transactions->where('status', 'pending')->first();
+                if ($pendingTrx && $pendingTrx->bukti_pembayaran) {
+                    $pendingTrx->bukti_url = asset('storage/' . $pendingTrx->bukti_pembayaran);
+                }
+                return $member;
+            });
 
-    // Kita hapus $allCourses dari sini agar React tidak punya pilihan kelas lain selain yang dibeli
-    return Inertia::render('Admin/Members/Index', [
-        'members' => $members,
-    ]);
-}
+        // Kita hapus $allCourses dari sini agar React tidak punya pilihan kelas lain selain yang dibeli
+        return Inertia::render('Admin/Members/Index', [
+            'members' => $members,
+        ]);
+    }
 
     
     public function store(Request $request)
@@ -64,36 +67,42 @@ class MemberController extends Controller
         return back()->with('success', 'Member baru berhasil ditambahkan secara manual.');
     }
 
-public function verify(Request $request, User $member)
-{
-    // Aktifkan akun member
-    $member->update(['status_akun' => 'aktif']);
+    public function verify(Request $request, User $member)
+    {
+        // Aktifkan akun member
+        $member->update(['status_akun' => 'aktif']);
 
-    // Cari transaksi yang pending milik member ini
-    $transaction = Transaction::where('user_id', $member->id)
-        ->where('status', 'pending')
-        ->with('courses')
-        ->first();
+        // Cari transaksi yang pending milik member ini
+        $transaction = Transaction::where('user_id', $member->id)
+            ->where('status', 'pending')
+            ->with('courses')
+            ->first();
 
-    if ($transaction) {
-        // 1. Update status transaksi menjadi verified
-        $transaction->update(['status' => 'verified']);
-        
-        // 2. Ambil semua ID kelas yang ada di dalam transaksi tersebut
-        // Kita tidak perlu lagi $request->course_ids karena kita pakai data dari transaksi asli
-        $courseIds = $transaction->courses->pluck('id')->toArray();
+        if ($transaction) {
+            // 1. Update status transaksi menjadi verified
+            $transaction->update(['status' => 'verified']);
+            
+            // 2. Ambil semua ID kelas yang ada di dalam transaksi tersebut
+            // Kita tidak perlu lagi $request->course_ids karena kita pakai data dari transaksi asli
+            $courseIds = $transaction->courses->pluck('id')->toArray();
 
-        // 3. Update total_harga berdasarkan jumlah harga kelas di dalam transaksi itu
-        $transaction->update(['total_harga' => $transaction->courses->sum('harga')]);
+            // 3. Update total_harga berdasarkan jumlah harga kelas di dalam transaksi itu
+            $transaction->update(['total_harga' => $transaction->courses->sum('harga')]);
 
-        // Opsional: Jika kamu punya sistem email yang kita bahas di awal, 
-        // taruh logic kirim email di sini.
+            // ==========================================
+            // FITUR BARU: KIRIM EMAIL KE MEMBER
+            // ==========================================
+            // Karena bisa jadi beli lebih dari 1 kelas, kita gabungkan nama kelasnya
+            $courseNames = $transaction->courses->pluck('nama')->implode(', ');
+            // Membuat dummy object agar sesuai dengan format di Blade {{ $course->nama }}
+            $courseData = (object) ['nama' => $courseNames];
+            
+            Mail::to($member->email)->send(new MemberPaymentAccepted($member, $courseData));
+            // ==========================================
+        }
+
+        return back()->with('success', 'Pembayaran diverifikasi, akun member aktif, dan email notifikasi telah dikirim!');
     }
-
-    return back()->with('success', 'Pembayaran diverifikasi dan akun member telah aktif!');
-}
-
-    
 
     
     public function reject(User $member)

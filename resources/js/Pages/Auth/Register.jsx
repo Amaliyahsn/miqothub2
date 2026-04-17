@@ -3,7 +3,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { 
     User, Mail, Lock, MapPin, Briefcase, Heart, UserPlus, 
-    ArrowLeft, Upload, CheckSquare, Receipt, CalendarDays, BookOpen, Sparkles, Phone
+    ArrowLeft, Upload, CheckSquare, Receipt, CalendarDays, BookOpen, Sparkles, Phone, ChevronDown, Copy, Check
 } from 'lucide-react';
 
 export default function Register({ courses }) {
@@ -17,10 +17,18 @@ export default function Register({ courses }) {
     });
 
     const [preview, setPreview] = useState(null);
+    const [selectedMethod, setSelectedMethod] = useState('');
+    const [copied, setCopied] = useState(false);
 
     useEffect(() => {
         return () => reset('password', 'password_confirmation');
     }, []);
+
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -49,12 +57,10 @@ export default function Register({ courses }) {
     const totalPrice = selectedCourses.reduce((sum, course) => sum + course.harga, 0);
 
     return (
-        
         <div className="min-h-screen bg-[#F8FAFC] py-16 px-4 sm:px-6 lg:px-8 selection:bg-blue-500 selection:text-white overflow-x-hidden font-sans">
-            <Head title="Pendaftaran Kelas - MiqotHub" />
+            <Head title="Pendaftaran Kelas" />
 
             <div className="max-w-7xl mx-auto relative z-10">
-                
                 <Link href="/" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-10 font-semibold text-sm bg-white px-5 py-2.5 rounded-full border border-slate-200 shadow-sm hover:shadow-md">
                     <ArrowLeft size={18} /> Kembali ke Beranda
                 </Link>
@@ -63,8 +69,12 @@ export default function Register({ courses }) {
                     initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} 
                     className="w-full bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row overflow-visible"
                 >
-                    
                     <div className="w-full md:w-[42%] bg-slate-900 p-8 sm:p-10 lg:p-12 text-white flex flex-col relative shrink-0 md:rounded-l-[2rem] rounded-t-[2rem] md:rounded-tr-none">
+                        <img 
+                            src="/assets/images/bg-login.jpg" 
+                            className="absolute inset-0 w-full h-full object-cover opacity-[0.12] blur-md scale-105 pointer-events-none"
+                            alt="Background" 
+                        />
                         
                         <div className="mb-10">
                             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-6 text-white shadow-md">
@@ -74,7 +84,6 @@ export default function Register({ courses }) {
                             <p className="text-slate-300 text-sm font-medium leading-relaxed">Tentukan kelas yang ingin diikuti, lalu lakukan pembayaran sesuai instruksi di bawah.</p>
                         </div>
 
-                        
                         <div className="space-y-4 mb-12">
                             <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Kelas Tersedia ({courses.length})</h3>
                             {courses.length === 0 ? (
@@ -101,75 +110,150 @@ export default function Register({ courses }) {
                                     </div>
                                 ))
                             )}
-                            {errors.course_ids && <p className="text-rose-400 text-xs font-semibold mt-2">{errors.course_ids}</p>}
                         </div>
 
-                        
                         {data.course_ids.length > 0 && (
                             <div className="shrink-0 space-y-6 pt-10 mt-10 border-t border-slate-800">
                                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Instruksi Pembayaran</h3>
                                 
                                 <div className="p-6 rounded-2xl bg-white text-slate-900 flex justify-between items-center shadow-sm">
-                                    <div>
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total {selectedCourses.length} Program</p>
-                                        <p className="text-2xl font-black text-blue-600 leading-none">{formatRupiah(totalPrice)}</p>
+                                    <div className="flex-1">
+                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Transfer</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-2xl font-black text-blue-600 leading-none">{formatRupiah(totalPrice)}</p>
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleCopy(totalPrice)}
+                                                className="p-1.5 hover:bg-slate-100 rounded-md transition-colors text-slate-400 hover:text-blue-600"
+                                                title="Salin nominal"
+                                            >
+                                                <Copy size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                     <Sparkles className="text-amber-500" size={28} />
                                 </div>
 
                                 <div className="space-y-4">
-                                    <p className="text-sm font-semibold text-slate-300">Silakan transfer ke rekening berikut:</p>
-                                    
-                                    {app_settings.bank1_active === 'true' && (
-                                        <div className="p-4 rounded-2xl bg-slate-800 border border-slate-700 flex items-center gap-4">
-                                            <div className="p-2.5 bg-slate-900 rounded-lg text-slate-300"><Receipt size={18}/></div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{app_settings.bank1_name}</p>
-                                                <p className="text-base font-black text-white tracking-wider">{app_settings.bank1_number}</p>
-                                                <p className="text-[11px] font-medium text-slate-400">a.n. {app_settings.bank1_owner}</p>
+                                    <label className="block text-sm font-semibold text-slate-300 mb-1">Pilih Metode Pembayaran:</label>
+                                    <div className="relative group">
+    {/* Label kecil di atas dropdown untuk kejelasan */}
+    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
+        Pilih Metode Pembayaran
+    </label>
+    
+    <div className="relative">
+        <select 
+            value={selectedMethod}
+            onChange={(e) => setSelectedMethod(e.target.value)}
+            className="w-full bg-slate-800/50 border-2 border-slate-700 text-white rounded-2xl py-3.5 pl-5 pr-12 text-sm font-bold appearance-none cursor-pointer transition-all duration-200 hover:border-slate-500 hover:bg-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none sm:text-base"
+        >
+            <option value="" className="bg-slate-900">-- Pilih Metode Transfer --</option>
+            {app_settings.bank1_active === '1' && (
+                <option value="bank1" className="bg-slate-900">{app_settings.bank1_name}</option>
+            )}
+            {app_settings.bank2_active === '1' && (
+                <option value="bank2" className="bg-slate-900">{app_settings.bank2_name}</option>
+            )}
+            {app_settings.qris_active === '1' && (
+                <option value="qris" className="bg-slate-900">QRIS </option>
+            )}
+        </select>
+        
+        {/* Icon Chevron yang lebih responsif posisinya */}
+        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 group-hover:text-white transition-colors">
+            <ChevronDown size={20} strokeWidth={2.5} />
+        </div>
+    </div>
+
+    {/* Info tambahan tipis di bawah dropdown */}
+    {!selectedMethod && (
+        <p className="mt-2 ml-1 text-[11px] text-slate-500 italic">
+            *Pilih salah satu untuk melihat nomor rekening
+        </p>
+    )}
+</div>
+
+                                    {(selectedMethod === 'bank1' || selectedMethod === 'bank2') && (
+                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-800 border border-blue-500/50 flex flex-col gap-3">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="p-2 bg-slate-900 rounded-lg text-blue-400"><Receipt size={18}/></div>
+                                                    <div>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                            {selectedMethod === 'bank1' ? app_settings.bank1_name : app_settings.bank2_name}
+                                                        </p>
+                                                        <p className="text-base font-black text-white tracking-wider">
+                                                            {selectedMethod === 'bank1' ? app_settings.bank1_number : app_settings.bank2_number}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleCopy(selectedMethod === 'bank1' ? app_settings.bank1_number : app_settings.bank2_number)}
+                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-[10px] transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
+                                                >
+                                                    {copied ? <><Check size={12}/> Tersalin!</> : <><Copy size={12}/> Salin No. Rek</>}
+                                                </button>
                                             </div>
-                                        </div>
+                                            <p className="text-[11px] font-medium text-slate-400 border-t border-slate-700 pt-2">
+                                                Atas Nama: <span className="text-white uppercase">{selectedMethod === 'bank1' ? app_settings.bank1_owner : app_settings.bank2_owner}</span>
+                                            </p>
+                                        </motion.div>
                                     )}
 
-                                    {app_settings.bank2_active === 'true' && (
-                                        <div className="p-4 rounded-2xl bg-slate-800 border border-slate-700 flex items-center gap-4">
-                                            <div className="p-2.5 bg-slate-900 rounded-lg text-slate-300"><Receipt size={18}/></div>
-                                            <div>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{app_settings.bank2_name}</p>
-                                                <p className="text-base font-black text-white tracking-wider">{app_settings.bank2_number}</p>
-                                                <p className="text-[11px] font-medium text-slate-400">a.n. {app_settings.bank2_owner}</p>
-                                            </div>
-                                        </div>
+                                    {selectedMethod === 'qris' && app_settings.qris_path && (
+                                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-4 rounded-2xl bg-white flex flex-col items-center gap-3">
+                                            <img src={`/storage/${app_settings.qris_path}`} alt="QRIS" className="w-full max-w-[180px] h-auto" />
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase text-center italic">Scan QRIS melalui M-Banking / E-Wallet</p>
+                                        </motion.div>
                                     )}
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2"><Upload size={16} className="text-blue-400"/> Unggah Bukti Transfer (Wajib)</label>
-                                    <div className="relative w-full h-32 rounded-2xl border-2 border-dashed border-slate-600 bg-slate-800/50 flex flex-col items-center justify-center overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer">
-                                        {preview ? (
-                                            <img src={preview} alt="Preview Bukti" className="w-full h-full object-cover" />
-                                        ) : (
-                                            <div className="text-center p-4">
-                                                <Upload className="mx-auto text-slate-400 mb-2 group-hover:text-blue-400 transition-colors" size={24} />
-                                                <p className="text-xs font-medium text-slate-400">Klik untuk pilih foto struk (Max 2MB)</p>
-                                            </div>
-                                        )}
-                                        <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
-                                    </div>
-                                    {errors.bukti_pembayaran && <p className="text-rose-400 text-xs font-semibold mt-2">{errors.bukti_pembayaran}</p>}
-                                </div>
+                                {selectedMethod && (
+                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                        <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                                            <Upload size={16} className="text-blue-400"/> Unggah Bukti Transfer (Wajib)
+                                        </label>
+                                        <div className="relative w-full h-32 rounded-2xl border-2 border-dashed border-slate-600 bg-slate-800/50 flex flex-col items-center justify-center overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer">
+                                            {preview ? (
+                                                <img src={preview} alt="Preview Bukti" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <div className="text-center p-4">
+                                                    <Upload className="mx-auto text-slate-400 mb-2 group-hover:text-blue-400 transition-colors" size={24} />
+                                                    <p className="text-xs font-medium text-slate-400">Klik untuk pilih foto struk</p>
+                                                </div>
+                                            )}
+                                            <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
+                                        </div>
+                                    </motion.div>
+                                )}
                             </div>
                         )}
-                        
-                        <div className="mt-auto pt-10 text-center border-t border-slate-800/50 mt-8">
-                            <p className="text-xs font-medium text-slate-400 mb-3">Butuh bantuan pendaftaran?</p>
-                            <a href={`https://wa.me/${app_settings.wa_admin || ''}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-emerald-600 rounded-full text-white font-semibold text-xs transition-colors border border-slate-700 hover:border-emerald-500">
-                                <Phone size={14}/> Chat Admin (WhatsApp)
-                            </a>
-                        </div>
+
+<div className="mt-auto pt-10 text-center border-t border-slate-800/50 mt-8">
+    <p className="text-xs font-medium text-slate-400 mb-3">Butuh bantuan pendaftaran?</p>
+    
+    {/* Membuat pesan otomatis yang dinamis */}
+    {(() => {
+        const message = `Halo Admin MiqotHub, saya ingin bertanya mengenai pendaftaran kelas: ${selectedCourses.map(c => c.nama).join(', ') || '...'}.`;
+        const whatsappUrl = `https://wa.me/${app_settings.wa_admin || ''}?text=${encodeURIComponent(message)}`;
+        
+        return (
+            <a 
+                href={whatsappUrl} 
+                target="_blank" 
+                rel="noreferrer" 
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-800 hover:bg-emerald-600 rounded-full text-white font-semibold text-[11px] sm:text-xs transition-all duration-300 border border-slate-700 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 active:scale-95"
+            >
+                <Phone size={14} className="animate-pulse" /> 
+                <span>Chat Admin (WhatsApp)</span>
+            </a>
+        );
+    })()}
+</div>
                     </div>
 
-                    
                     <div className="w-full md:w-[58%] p-8 sm:p-12 lg:p-16 flex flex-col bg-white overflow-visible">
                         <div className="mb-10 shrink-0">
                             <h3 className="text-3xl font-black text-slate-900 mb-2 leading-tight">Lengkapi<br/>Identitas Diri</h3>

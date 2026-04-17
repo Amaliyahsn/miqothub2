@@ -15,6 +15,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+// TAMBAHAN: Import Mail dan Mailable
+use Illuminate\Support\Facades\Mail;
+use App\Mail\AdminPaymentNotification;
 
 class RegisteredUserController extends Controller
 {
@@ -80,6 +83,20 @@ class RegisteredUserController extends Controller
             
             // Simpan banyak kelas sekaligus ke transaksi
             $transaction->courses()->attach($pivotData);
+
+            // ==========================================
+            // FITUR BARU: KIRIM EMAIL KE ADMIN
+            // ==========================================
+            $namaKelas = $courses->pluck('nama')->implode(', ');
+            $dataEmail = [
+                'nama_member' => $request->name,
+                'nama_kelas' => $namaKelas,
+                'metode_pembayaran' => $request->payment_method ?? 'Transfer/QRIS',
+            ];
+
+            // Mengirim email ke email Admin
+            Mail::to('amaliyahsyahidatunnimah27@gmail.com')->send(new AdminPaymentNotification($dataEmail));
+            // ==========================================
 
             event(new Registered($user));
         });
