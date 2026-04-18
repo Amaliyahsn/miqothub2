@@ -28,15 +28,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <aside className={`fixed inset-y-0 left-0 z-30 w-72 bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
                 
                 <div className="flex items-center justify-between h-20 px-6 border-b border-slate-100">
-                    <Link href="/" className="flex items-center gap-2.5 text-2xl font-black tracking-tighter text-slate-900">
-                        <div className="p-2 bg-blue-900 rounded-lg text-white shadow-md shadow-blue-900/20">
+                    <Link href="/" className="flex items-center gap-3 text-2xl font-black text-slate-800 tracking-tight">
+                    <div className="p-2 bg-blue-700 rounded-lg text-white shadow-md shadow-blue-900/20">
                             <BookOpen size={20} strokeWidth={2.5} />
                         </div>
-                        Miqot<span className="text-blue-900">Admin</span>
+                        Miqot<span className="text-blue-700">Admin</span>
                     </Link>
-                    <button onClick={() => setIsOpen(false)} className="md:hidden p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors">
-                        <X size={20} />
-                    </button>
                 </div>
 
                 <nav className="p-4 space-y-1.5 mt-2">

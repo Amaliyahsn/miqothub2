@@ -107,6 +107,26 @@ export default function Welcome({
                         Miqot<span className="text-blue-600">Hub</span>
                     </motion.div>
 
+                    {/* <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="text-xl sm:text-2xl font-black tracking-tighter text-slate-900 flex items-center gap-2"
+                >
+                    {/* Container Logo Kustom */}
+                    {/* <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center overflow-hidden">
+                        <img 
+                            src="/logo4.png" 
+                            alt="MiqotHub Logo" 
+                            className="w-full h-full object-contain"
+                        />
+                    </div>
+
+                    {/* Teks Brand */}
+                    {/* <span>
+                        Miqot<span className="text-blue-600">Hub</span>
+                    </span>
+                    </motion.div> */}
+
                     <div className="flex items-center gap-2 sm:gap-4">
                         {auth?.user ? (
                             <Link
@@ -250,180 +270,139 @@ export default function Welcome({
                 </div>
             </main>
 
-            {/* DIKURANGI pt-16 menjadi pt-8 agar section ini tidak terlalu melompong di atas */}
-            <section
-                id="pricelist"
-                className="relative z-10 pt-8 pb-16 md:pt-12 md:pb-24 bg-[#F8FAFC]"
-            >
-                <motion.div
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-50px" }}
-                    variants={staggerContainer}
-                    className="max-w-7xl mx-auto px-4 sm:px-6"
+            {/* DIKURANGI pt-16 menjadi pt-8 agar section ini tidak terlalu melompong di atas */}{/* Section Program Kelas */}
+<section
+    id="pricelist"
+    className="relative z-10 pt-8 pb-16 md:pt-12 md:pb-24 bg-[#F8FAFC]"
+>
+    <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={staggerContainer}
+        className="max-w-7xl mx-auto px-4 sm:px-6"
+    >
+        <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-10 md:mb-12 gap-4 text-center md:text-left">
+            <div>
+                <motion.h2
+                    variants={fadeUpVariant}
+                    className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2"
                 >
-                    <div className="flex flex-col md:flex-row justify-between items-center md:items-end mb-10 md:mb-12 gap-4 text-center md:text-left">
-                        <div>
-                            <motion.h2
-                                variants={fadeUpVariant}
-                                className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2"
-                            >
-                                Program Kelas
-                            </motion.h2>
-                            <motion.p
-                                variants={fadeUpVariant}
-                                className="text-slate-500 text-sm sm:text-base"
-                            >
-                                Pilih program komprehensif yang sesuai dengan
-                                kebutuhan Anda.
-                            </motion.p>
-                        </div>
-                    </div>
+                    Program Kelas
+                </motion.h2>
+                <motion.p
+                    variants={fadeUpVariant}
+                    className="text-slate-500 text-sm sm:text-base"
+                >
+                    Pilih program komprehensif yang sesuai dengan kebutuhan Anda.
+                </motion.p>
+            </div>
+        </div>
 
-                    {courses.length === 0 ? (
-                        <div className="text-center py-16 bg-white rounded-[2rem] border border-slate-200 shadow-sm mx-2 sm:mx-0">
-                            <BookOpen
-                                size={40}
-                                className="mx-auto text-slate-300 mb-4"
-                            />
-                            <h3 className="text-lg font-bold text-slate-500">
-                                Belum Ada Kelas yang Tersedia
-                            </h3>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                            {courses.map((course, idx) => (
-                                <motion.div
-                                    key={course.id}
-                                    variants={fadeUpVariant}
-                                    // Efek Glassmorphism: Background biru sangat muda transparan + blur + border putih tipis
-                                    className="bg-gradient-to-br from-blue-50/80 via-white/90 to-blue-50/50 backdrop-blur-md rounded-[2rem] border border-white p-3 shadow-xl shadow-blue-900/5 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-500 flex flex-col group"
-                                >
-                                    {/* Area Thumbnail */}
-                                    <div className="relative h-48 sm:h-56 rounded-[1.5rem] overflow-hidden bg-slate-100 shadow-inner">
-                                        {course.thumbnail_url ? (
-                                            <img
-                                                src={course.thumbnail_url}
-                                                alt={course.nama}
-                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center bg-blue-100/30">
-                                                <BookOpen
-                                                    size={40}
-                                                    className="text-blue-200"
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
-                                            <span className="px-3 py-1.5 bg-blue-900/90 backdrop-blur-md rounded-lg text-[10px] sm:text-xs font-bold text-white shadow-lg border border-white/20">
-                                                Batch {course.batch}
-                                            </span>
-                                        </div>
+        {/* LOGIKA FILTER: Menghitung kelas yang tidak expired */}
+        {courses.filter(course => !course.is_expired).length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-[2rem] border border-slate-200 shadow-sm mx-2 sm:mx-0">
+                <BookOpen
+                    size={40}
+                    className="mx-auto text-slate-300 mb-4"
+                />
+                <h3 className="text-lg font-bold text-slate-500">
+                    Belum Ada Kelas yang Tersedia
+                </h3>
+                <p className="text-slate-400 text-sm mt-1">Nantikan pembukaan batch selanjutnya!</p>
+            </div>
+        ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {courses
+                    /* FILTER: Hanya tampilkan yang is_expired-nya false */
+                    .filter(course => !course.is_expired)
+                    .map((course, idx) => (
+                        <motion.div
+                            key={course.id}
+                            variants={fadeUpVariant}
+                            className="bg-gradient-to-br from-blue-50/80 via-white/90 to-blue-50/50 backdrop-blur-md rounded-[2rem] border border-white p-3 shadow-xl shadow-blue-900/5 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1 transition-all duration-500 flex flex-col group"
+                        >
+                            {/* Area Thumbnail */}
+                            <div className="relative h-48 sm:h-56 rounded-[1.5rem] overflow-hidden bg-slate-100 shadow-inner">
+                                {course.thumbnail_url ? (
+                                    <img
+                                        src={course.thumbnail_url}
+                                        alt={course.nama}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center bg-blue-100/30">
+                                        <BookOpen
+                                            size={40}
+                                            className="text-blue-200"
+                                        />
                                     </div>
+                                )}
+                                <div className="absolute top-3 left-3 sm:top-4 sm:left-4">
+                                    <span className="px-3 py-1.5 bg-blue-900/90 backdrop-blur-md rounded-lg text-[10px] sm:text-xs font-bold text-white shadow-lg border border-white/20">
+                                        Batch {course.batch}
+                                    </span>
+                                </div>
+                            </div>
 
-                                    {/* Konten */}
-                                    <div className="p-5 sm:p-6 flex flex-col flex-1">
-                                        <h3 className="text-lg sm:text-xl font-bold text-blue-950 leading-snug mb-3 line-clamp-2 group-hover:text-blue-700 transition-colors">
-                                            {course.nama}
-                                        </h3>
+                            {/* Konten */}
+                            <div className="p-5 sm:p-6 flex flex-col flex-1">
+                                <h3 className="text-lg sm:text-xl font-bold text-blue-950 leading-snug mb-3 line-clamp-2 group-hover:text-blue-700 transition-colors">
+                                    {course.nama}
+                                </h3>
 
-                                        <div className="mb-5 sm:mb-6 flex flex-col gap-0.5 pb-5 sm:pb-6 border-b border-blue-100/50">
-                                            {course.harga_coret > 0 && (
-                                                <span className="text-xs sm:text-sm font-medium text-slate-400 line-through decoration-slate-300">
-                                                    {formatRupiah(
-                                                        course.harga_coret,
-                                                    )}
+                                <div className="mb-5 sm:mb-6 flex flex-col gap-0.5 pb-5 sm:pb-6 border-b border-blue-100/50">
+                                    {course.harga_coret > 0 && (
+                                        <span className="text-xs sm:text-sm font-medium text-slate-400 line-through decoration-slate-300">
+                                            {formatRupiah(course.harga_coret)}
+                                        </span>
+                                    )}
+                                    <span className="text-2xl sm:text-3xl font-black text-blue-900 drop-shadow-sm">
+                                        {formatRupiah(course.harga)}
+                                    </span>
+                                </div>
+
+                                {/* List Fitur */}
+                                <div className="flex-1 space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
+                                    {(() => {
+                                        let fiturList = [];
+                                        try {
+                                            fiturList = typeof course.fitur === "string"
+                                                ? JSON.parse(course.fitur)
+                                                : Array.isArray(course.fitur)
+                                                    ? course.fitur
+                                                    : [];
+                                        } catch (e) {
+                                            fiturList = [];
+                                        }
+
+                                        return fiturList.map((item, i) => (
+                                            <div key={i} className="flex items-start gap-2.5">
+                                                <div className="bg-blue-100 rounded-full p-0.5 mt-0.5">
+                                                    <CheckCircle2 size={14} className="text-blue-600 shrink-0" />
+                                                </div>
+                                                <span className="text-xs sm:text-sm text-slate-600 font-medium line-clamp-2">
+                                                    {item}
                                                 </span>
-                                            )}
-                                            <span className="text-2xl sm:text-3xl font-black text-blue-900 drop-shadow-sm">
-                                                {formatRupiah(course.harga)}
-                                            </span>
-                                        </div>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
 
-                                        <div className="flex-1 space-y-2.5 sm:space-y-3 mb-6 sm:mb-8">
-                                            {(() => {
-                                                let fiturList = [];
-                                                try {
-                                                    fiturList =
-                                                        typeof course.fitur ===
-                                                        "string"
-                                                            ? JSON.parse(
-                                                                  course.fitur,
-                                                              )
-                                                            : Array.isArray(
-                                                                    course.fitur,
-                                                                )
-                                                              ? course.fitur
-                                                              : [];
-                                                } catch (e) {
-                                                    fiturList = [];
-                                                }
+                                <Link
+                                    href={auth?.user ? route("member.catalog") : route("register")}
+                                    className="w-full py-3.5 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-xl font-bold text-sm sm:text-base text-center hover:from-blue-700 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-900/10 active:scale-[0.98]"
+                                >
+                                    Daftar Sekarang
+                                </Link>
+                            </div>
+                        </motion.div>
+                    ))}
+            </div>
+        )}
+    </motion.div>
+</section>
 
-                                                return fiturList.length > 0 ? (
-                                                    fiturList.map((item, i) => (
-                                                        <div
-                                                            key={i}
-                                                            className="flex items-start gap-2.5"
-                                                        >
-                                                            <div className="bg-blue-100 rounded-full p-0.5 mt-0.5">
-                                                                <CheckCircle2
-                                                                    size={14}
-                                                                    className="text-blue-600 shrink-0"
-                                                                />
-                                                            </div>
-                                                            <span className="text-xs sm:text-sm text-slate-600 font-medium">
-                                                                {item}
-                                                            </span>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <>
-                                                        <div className="flex items-start gap-2.5">
-                                                            <CheckCircle2
-                                                                size={18}
-                                                                className="text-blue-500 shrink-0 mt-0.5"
-                                                            />
-                                                            <span className="text-xs sm:text-sm text-slate-600">
-                                                                Akses penuh
-                                                                Modul & Video
-                                                                materi
-                                                            </span>
-                                                        </div>
-                                                        <div className="flex items-start gap-2.5">
-                                                            <CheckCircle2
-                                                                size={18}
-                                                                className="text-blue-500 shrink-0 mt-0.5"
-                                                            />
-                                                            <span className="text-xs sm:text-sm text-slate-600">
-                                                                Latihan Soal
-                                                                (CBT) & evaluasi
-                                                                instan
-                                                            </span>
-                                                        </div>
-                                                    </>
-                                                );
-                                            })()}
-                                        </div>
-
-                                        <Link
-                                            href={
-                                                auth?.user
-                                                    ? route("member.catalog")
-                                                    : route("register")
-                                            }
-                                            // Tombol disesuaikan warnanya agar kontras dengan card glossy
-                                            className="w-full py-3.5 bg-gradient-to-r from-blue-900 to-blue-800 text-white rounded-xl font-bold text-sm sm:text-base text-center hover:from-blue-700 hover:to-blue-600 transition-all duration-300 shadow-lg shadow-blue-900/10 active:scale-[0.98]"
-                                        >
-                                            Daftar Sekarang
-                                        </Link>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    )}
-                </motion.div>
-            </section>
 
             <section
                 id="fitur"

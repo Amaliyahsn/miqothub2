@@ -9,18 +9,13 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Member\ReviewController;
 use App\Http\Controllers\Member\CourseController as MemberCourseController;
-use Illuminate\Foundation\Application;
+use App\Http\Controllers\Member\ExerciseController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
-| Public Routes (Bisa diakses siapa saja)
-|--------------------------------------------------------------------------
-*/
-/*
-|--------------------------------------------------------------------------
-| Public Routes (Bisa diakses siapa saja)
+| Public Routes
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
@@ -35,16 +30,15 @@ Route::get('/', function () {
             return $course;
         });
 
-    // 2. Ambil Data Ulasan/Reviews (Tambahan Baru)
-    // Kita ambil review yang punya rating 4 atau 5, dan sudah ditandai tampil_di_landing
-    $reviews = \App\Models\Review::with('user:id,name') // Hanya ambil id dan nama user untuk keamanan
+    // 2. Ambil Data Ulasan (Rating >= 4)
+    $reviews = \App\Models\Review::with('user:id,name')
         ->where('tampilkan_di_landing', true)
         ->where('rating', '>=', 4)
         ->latest()
-        ->take(6) // Batasi 6 review terbaru saja agar tidak berat
+        ->take(6)
         ->get();
 
-    // 3. Ambil data dari tabel settings
+    // 3. Ambil Pengaturan Situs
     $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
 
     return Inertia::render('Welcome', [
@@ -52,155 +46,131 @@ Route::get('/', function () {
         'canRegister' => Route::has('register'),
         'courses' => $courses, 
         'settings' => $settings,
-        'reviews' => $reviews, // KIRIM DATA REVIEW KE REACT
+        'reviews' => $reviews,
     ]);
 })->name('welcome');
 
 /*
 |--------------------------------------------------------------------------
-| Authenticated Routes (Harus Login - Berlaku untuk Member & Admin)
+| Authenticated Routes (Member & Admin)
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'verified'])->group(function () {
     
+    // Dashboard Logic
     Route::get('/dashboard', function () {
         $user = auth()->user();
 
-        // 1. Jika Admin, kita arahkan (redirect) ke route khusus admin
         if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard'); 
         }
 
-        // 2. Jika Member, eksekusi logic di bawah ini
+        // Ambil Data Kursus Member
         $myCourses = $user->courses()->get()->map(function ($course) {
             $course->thumbnail_url = $course->thumbnail ? asset('storage/' . $course->thumbnail) : null;
             return $course;
         });
 
-        $kelasAktif = $myCourses->count();
-        $kuisSelesai = \App\Models\ExerciseScore::where('user_id', $user->id)->count(); 
-        $sertifikat = 0; 
-        
-        $recentCourses = $myCourses->take(3);
+        // Hitung Statistik Nilai (Tingkat Keberhasilan)
+        $scoreQuery = \App\Models\ExerciseScore::where('user_id', $user->id);
+        $kuisSelesai = $scoreQuery->count();
+        $persentaseLulus = $kuisSelesai > 0 ? round($scoreQuery->avg('skor')) : 0;
 
         return Inertia::render('Member/Dashboard', [
             'stats' => [
-                'kelas_aktif' => $kelasAktif,
+                'kelas_aktif' => $myCourses->count(),
                 'kuis_selesai' => $kuisSelesai,
-                'sertifikat' => $sertifikat,
+                'sertifikat' => 0, 
+                'persentase_lulus' => $persentaseLulus,
             ],
-            'recentCourses' => $recentCourses,
+            'recentCourses' => $myCourses->take(3),
         ]);
     })->name('dashboard');
 
-    // ... sisa route member lainnya biarkan sama persis ...
+    // Member Course Routes
     Route::get('/my-courses', [MemberCourseController::class, 'index'])->name('member.courses.index');
     Route::get('/my-courses/{id}', [MemberCourseController::class, 'show'])->name('member.courses.show');
-    
-
-
-
     Route::get('/katalog', [MemberCourseController::class, 'catalog'])->name('member.catalog');
     Route::post('/katalog/purchase', [MemberCourseController::class, 'purchase'])->name('member.purchase');
 
-    
-    
-    
-    
+    // Exercise / Kuis Routes
     Route::prefix('member/materials/{material}/exercise')->name('member.exercise.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Member\ExerciseController::class, 'show'])->name('show');
-        Route::post('/verify', [\App\Http\Controllers\Member\ExerciseController::class, 'verifyPassword'])->name('verify');
-        Route::post('/submit', [\App\Http\Controllers\Member\ExerciseController::class, 'submit'])->name('submit');
-
-        Route::delete('/reset', [\App\Http\Controllers\Member\ExerciseController::class, 'reset'])->name('reset');
+        Route::get('/', [ExerciseController::class, 'show'])->name('show');
+        Route::post('/verify', [ExerciseController::class, 'verifyPassword'])->name('verify');
+        Route::post('/submit', [ExerciseController::class, 'submit'])->name('submit');
+        Route::delete('/reset', [ExerciseController::class, 'reset'])->name('reset');
     });
-    
 
-    
+    // Profile Management
     Route::prefix('profile')->name('profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'edit'])->name('edit');
         Route::patch('/', [ProfileController::class, 'update'])->name('update');
         Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
     });
 
-    // Letakkan di dalam Route::middleware(['auth', 'verified'])
-    Route::get('/materials/stream-pdf/{material}', [CurriculumController::class, 'streamPdf'])
-    ->name('materials.stream');
-
+    // Utilities (PDF Stream & Review)
+    Route::get('/materials/stream-pdf/{material}', [CurriculumController::class, 'streamPdf'])->name('materials.stream');
     Route::post('/member/reviews', [ReviewController::class, 'store'])->name('member.reviews.store');
 
 });
 
 /*
 |--------------------------------------------------------------------------
-| Admin Only Routes (Harus Login & Role: Admin)
+| Admin Only Routes
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    Route::get('/management', [AdminManagementController::class, 'index'])->name('management.index');
-    Route::post('/management', [AdminManagementController::class, 'store'])->name('management.store');
-    Route::put('/management/{admin}', [AdminManagementController::class, 'update'])->name('management.update');
-    Route::delete('/management/{admin}', [AdminManagementController::class, 'destroy'])->name('management.destroy');
+    // Admin Management
+    Route::resource('management', AdminManagementController::class)->except(['show', 'create', 'edit']);
     
-    
+    // Kursus & Kurikulum
     Route::resource('courses', CourseController::class);
-
-    
     Route::get('/courses/{course}/curriculum', [CurriculumController::class, 'show'])->name('courses.curriculum');
     
-    
+    // Chapters
     Route::post('/courses/{course}/chapters', [CurriculumController::class, 'storeChapter'])->name('chapters.store');
-    Route::delete('/chapters/{chapter}', [CurriculumController::class, 'destroyChapter'])->name('chapters.destroy');
     Route::put('/chapters/{chapter}', [CurriculumController::class, 'updateChapter'])->name('chapters.update');
+    Route::delete('/chapters/{chapter}', [CurriculumController::class, 'destroyChapter'])->name('chapters.destroy');
     Route::put('/chapters/{chapter}/reorder', [CurriculumController::class, 'reorderChapter'])->name('chapters.reorder');
     
-    
-    
-    Route::put('/materials/{material}', [CurriculumController::class, 'updateMaterial'])->name('materials.update');
-    Route::delete('/materials/{material}', [CurriculumController::class, 'destroyMaterial'])->name('materials.destroy');
-    
-    
+    // Materials
     Route::post('/chapters/{chapter}/materials', [CurriculumController::class, 'storeMaterial'])->name('materials.store');
     Route::post('/chapters/{chapter}/meetings', [CurriculumController::class, 'storeMeeting'])->name('meetings.store');
     Route::post('/chapters/{chapter}/exercises', [CurriculumController::class, 'storeExercise'])->name('exercises.store');
-    
-    
     Route::put('/materials/{material}', [CurriculumController::class, 'updateMaterial'])->name('materials.update');
     Route::delete('/materials/{material}', [CurriculumController::class, 'destroyMaterial'])->name('materials.destroy');
     Route::put('/materials/{material}/reorder', [CurriculumController::class, 'reorderMaterial'])->name('materials.reorder');
 
-
+    // Management Member
     Route::get('/members', [MemberController::class, 'index'])->name('members.index');
     Route::post('/members', [MemberController::class, 'store'])->name('members.store');
+    Route::put('/members/{member}', [MemberController::class, 'update'])->name('members.update');
+    Route::delete('/members/{member}', [MemberController::class, 'destroy'])->name('members.destroy');
     Route::post('/members/{member}/enroll', [MemberController::class, 'enrollCourse'])->name('members.enroll');
     Route::delete('/members/{member}/unenroll/{course}', [MemberController::class, 'unenrollCourse'])->name('members.unenroll');
     Route::put('/members/{member}/verify', [MemberController::class, 'verify'])->name('members.verify');
     Route::put('/members/{member}/reject', [MemberController::class, 'reject'])->name('members.reject');
-    Route::put('/members/{member}', [MemberController::class, 'update'])->name('members.update');
-    Route::delete('/members/{member}', [MemberController::class, 'destroy'])->name('members.destroy');
 
-    
+    // Exercise & Question Management
     Route::resource('exercises', \App\Http\Controllers\Admin\ExerciseController::class);
     Route::post('/exercises/{exercise}/questions', [\App\Http\Controllers\Admin\ExerciseController::class, 'storeQuestion'])->name('questions.store');
-    Route::delete('/questions/{question}', [\App\Http\Controllers\Admin\ExerciseController::class, 'destroyQuestion'])->name('questions.destroy');
-    
-    
-    Route::put('/exercises/{exercise}/reorder-questions', [\App\Http\Controllers\Admin\ExerciseController::class, 'reorderQuestions'])->name('questions.reorder');
     Route::put('/questions/{question}', [\App\Http\Controllers\Admin\ExerciseController::class, 'updateQuestion'])->name('questions.update');
+    Route::delete('/questions/{question}', [\App\Http\Controllers\Admin\ExerciseController::class, 'destroyQuestion'])->name('questions.destroy');
+    Route::put('/exercises/{exercise}/reorder-questions', [\App\Http\Controllers\Admin\ExerciseController::class, 'reorderQuestions'])->name('questions.reorder');
 
+    // Settings & Finance
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
-
     Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
     
 });
 
 /*
 |--------------------------------------------------------------------------
-| Authentication Routes (Bawaan Laravel Breeze)
+| Authentication Routes
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';

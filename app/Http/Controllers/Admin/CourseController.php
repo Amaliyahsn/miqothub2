@@ -13,11 +13,12 @@ class CourseController extends Controller
 {
     public function index()
     {
-        
         $courses = Course::with(['transactions' => function ($query) {
             $query->where('status', 'verified')->with('user:id,name,email');
         }])->latest()->get()->map(function ($course) {
             $course->thumbnail_url = $course->thumbnail ? asset('storage/' . $course->thumbnail) : null;
+            // Menambahkan status expired agar bisa dibaca di frontend (opsional)
+            $course->is_expired = $course->tanggal_selesai && \Carbon\Carbon::parse($course->tanggal_selesai)->isPast();
             return $course;
         });
 
@@ -42,6 +43,7 @@ class CourseController extends Controller
             'status' => 'required|in:onsale,offsale',
             'kuota' => 'nullable|integer|min:1',
             'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date', // Validasi tanggal selesai
             'link_grup_wa' => 'nullable|url',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'fitur' => 'nullable|array', 
@@ -52,7 +54,6 @@ class CourseController extends Controller
             $thumbnailPath = $request->file('thumbnail')->store('course_thumbnails', 'public');
         }
 
-        
         $slug = Str::slug($request->nama . '-' . $request->batch);
 
         Course::create([
@@ -65,6 +66,7 @@ class CourseController extends Controller
             'status' => $request->status,
             'kuota' => $request->kuota,
             'tanggal_mulai' => $request->tanggal_mulai,
+            'tanggal_selesai' => $request->tanggal_selesai, // Simpan ke database
             'link_grup_wa' => $request->link_grup_wa,
             'fitur' => $request->fitur, 
             'thumbnail' => $thumbnailPath,
@@ -84,6 +86,7 @@ class CourseController extends Controller
             'status' => 'required|in:onsale,offsale',
             'kuota' => 'nullable|integer|min:1',
             'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date', // Validasi tanggal selesai saat update
             'link_grup_wa' => 'nullable|url',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'fitur' => 'nullable|array',
@@ -100,6 +103,8 @@ class CourseController extends Controller
             $data['thumbnail'] = $request->file('thumbnail')->store('course_thumbnails', 'public');
         }
 
+        // Karena menggunakan $request->except(['thumbnail']), 
+        // maka field 'tanggal_selesai' sudah otomatis ada di dalam array $data
         $course->update($data);
 
         return redirect()->route('admin.courses.index')->with('success', 'Data Kelas berhasil diperbarui!');
@@ -114,6 +119,4 @@ class CourseController extends Controller
 
         return redirect()->route('admin.courses.index')->with('success', 'Kelas berhasil dihapus permanen.');
     }
-
-    
 }

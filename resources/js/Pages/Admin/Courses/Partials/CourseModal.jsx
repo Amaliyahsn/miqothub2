@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Save, Type, FileText, DollarSign, Users, Calendar, Link as LinkIcon, CheckSquare, Plus, Trash2, Tag } from 'lucide-react';
+import { X, Upload, Save, Type, FileText, DollarSign, Users, Calendar, Link as LinkIcon, CheckSquare, Plus, Trash2, Tag, CalendarOff } from 'lucide-react';
 
 export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
     const [preview, setPreview] = useState(null);
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         nama: '', deskripsi: '', harga: '', harga_coret: '', batch: '', 
-        status: 'onsale', kuota: '', tanggal_mulai: '', link_grup_wa: '', 
+        status: 'onsale', kuota: '', tanggal_mulai: '', tanggal_selesai: '', link_grup_wa: '', 
         fitur: [''], 
         thumbnail: null, _method: 'post',
     });
@@ -22,6 +22,7 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                     harga_coret: course.harga_coret || '', batch: course.batch, 
                     status: course.status, kuota: course.kuota || '', 
                     tanggal_mulai: course.tanggal_mulai ? course.tanggal_mulai.split('T')[0] : '', 
+                    tanggal_selesai: course.tanggal_selesai ? course.tanggal_selesai.split('T')[0] : '', 
                     link_grup_wa: course.link_grup_wa || '', 
                     fitur: course.fitur?.length > 0 ? course.fitur : [''], 
                     thumbnail: null, _method: 'put',
@@ -79,13 +80,10 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                 </button>
                             </div>
 
-                            
                             <form onSubmit={submit} className="flex-1 overflow-y-auto scrollbar-thin z-10 flex flex-col bg-white">
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-8">
                                     
-                                    
                                     <div className="lg:col-span-7 space-y-6">
-                                        
                                         
                                         <div>
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Thumbnail Kelas</label>
@@ -110,7 +108,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             {errors.thumbnail && <p className="text-rose-500 text-xs mt-1.5 font-semibold">{errors.thumbnail}</p>}
                                         </div>
 
-                                        
                                         <div>
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nama Kelas</label>
                                             <div className="relative">
@@ -120,7 +117,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             {errors.nama && <p className="text-rose-500 text-xs mt-1.5 font-semibold">{errors.nama}</p>}
                                         </div>
 
-                                        
                                         <div>
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Deskripsi Lengkap</label>
                                             <div className="relative">
@@ -130,7 +126,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             {errors.deskripsi && <p className="text-rose-500 text-xs mt-1.5 font-semibold">{errors.deskripsi}</p>}
                                         </div>
 
-                                        
                                         <div>
                                             <div className="flex justify-between items-center mb-2">
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Fasilitas / Fitur yang Didapat</label>
@@ -152,7 +147,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                         </div>
                                     </div>
 
-                                    
                                     <div className="lg:col-span-5 bg-slate-50 p-6 rounded-[1.5rem] border border-slate-200 h-fit space-y-6">
                                         
                                         <div className="flex items-center gap-2 mb-2 pb-4 border-b border-slate-200/60">
@@ -162,7 +156,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             <h3 className="font-black text-slate-800">Pengaturan Kelas</h3>
                                         </div>
 
-                                        
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Harga Jual (Rp)</label>
@@ -180,7 +173,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             </div>
                                         </div>
 
-                                        
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Gelombang</label>
@@ -195,7 +187,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             </div>
                                         </div>
 
-                                        
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kuota Peserta</label>
@@ -213,7 +204,16 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             </div>
                                         </div>
 
-                                        
+                                        {/* TAMBAHAN BARU: TANGGAL SELESAI / EXPIRED */}
+                                        <div className="grid grid-cols-1">
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tanggal Selesai</label>
+                                            <div className="relative">
+                                                <CalendarOff size={16} className="absolute top-3.5 left-3 text-rose-400" />
+                                                <input type="date" value={data.tanggal_selesai} onChange={e => setData('tanggal_selesai', e.target.value)} className="pl-9 w-full rounded-xl border border-slate-200 bg-white focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 py-3 text-sm font-semibold text-slate-600 shadow-sm outline-none transition-colors cursor-pointer" />
+                                            </div>
+                                            <p className="text-[9px] text-slate-400 mt-1 font-medium italic">*Tanggal akses kelas bagi member berakhir.</p>
+                                        </div>
+
                                         <div className="pt-2">
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Link Grup WhatsApp</label>
                                             <div className="relative">
@@ -224,7 +224,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
 
                                     </div>
                                 </div>
-                                
                                 
                                 <div className="mt-auto px-8 py-5 border-t border-slate-100 bg-[#F8FAFC] flex justify-end gap-3 shrink-0">
                                     <button type="button" onClick={onClose} disabled={processing} className="px-6 py-2.5 rounded-xl font-bold text-slate-500 bg-slate-100 hover:text-slate-800 hover:bg-slate-200 transition-colors disabled:opacity-50 text-sm">

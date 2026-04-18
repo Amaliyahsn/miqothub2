@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Carbon\Carbon; // Pastikan Carbon diimport
 
 class Course extends Model
 {
@@ -22,27 +23,47 @@ class Course extends Model
         'batch',
         'status',
         'kuota',
-        'tanggal_mulai'
+        'tanggal_mulai',
+        'tanggal_selesai'
     ];
 
     /**
-     * Konversi tipe data otomatis (Fitur baru standar Laravel 11/12)
+     * Tambahkan ini agar 'is_expired' otomatis ikut terkirim ke Inertia/Frontend
      */
+    protected $appends = ['is_expired', 'thumbnail_url'];
+
     protected function casts(): array
     {
         return [
-            'fitur' => 'array', // Mengubah JSON di database menjadi Array di PHP
+            'fitur' => 'array',
             'tanggal_mulai' => 'date',
+            'tanggal_selesai' => 'date',
         ];
     }
 
     /**
-     * Relasi: Sebuah kursus bisa dibeli di banyak transaksi
+     * Logic pengecekan apakah pendaftaran kelas sudah lewat tanggal pendaftaran
      */
+    public function getIsExpiredAttribute(): bool
+    {
+        // Jika hari ini sudah melewati tanggal_selesai, maka dianggap expired
+        if (!$this->tanggal_selesai) return false;
+        
+        return Carbon::parse($this->tanggal_selesai)->isPast();
+    }
+
+    /**
+     * Accessor untuk mempermudah pemanggilan URL thumbnail
+     */
+    public function getThumbnailUrlAttribute(): ?string
+    {
+        return $this->thumbnail ? asset('storage/' . $this->thumbnail) : null;
+    }
+
     public function transactions(): BelongsToMany
     {
         return $this->belongsToMany(Transaction::class)
-                    ->withPivot('harga_saat_beli') // Mengambil data dari tabel pivot
+                    ->withPivot('harga_saat_beli')
                     ->withTimestamps();
     }
 

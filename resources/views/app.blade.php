@@ -6,7 +6,7 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- <link rel="icon" type="image/png" href="{{ asset('logo2.png') }}"> -->
+        <!-- <link rel="icon" type="image/png" href="{{ asset('logo4.png') }}"> -->
 
         <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
         <link rel="alternate icon" href="/favicon.ico">

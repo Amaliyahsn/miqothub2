@@ -32,7 +32,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'pekerjaan' => 'Pelajar/Mahasiswa', 
+                    'pekerjaan' => $user->pekerjaan,
                     'tanggal_daftar' => $user->created_at ? $user->created_at->diffForHumans() : 'Baru saja',
                     // Gunakan kolom status_akun dari database
                     'status' => $user->status_akun === 'aktif' ? 'Aktif' : 'Menunggu',

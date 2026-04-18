@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Menambahkan useEffect
 import MemberLayout from '@/Layouts/MemberLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Upload, X, CheckCircle2, ChevronRight, Receipt, ShoppingBag, Sparkles, CreditCard, Landmark, Copy, Check } from 'lucide-react';
 
 export default function Catalog({ auth, courses }) {
-    // Mengambil pengaturan aplikasi dari props global Inertia
     const { app_settings } = usePage().props;
 
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -14,7 +13,7 @@ export default function Catalog({ auth, courses }) {
     
     const { data, setData, post, processing, errors, reset } = useForm({
         course_id: '',
-        payment_method: '', // Tambahan state metode pembayaran
+        payment_method: '',
         bukti_pembayaran: null,
     });
 
@@ -33,16 +32,23 @@ export default function Catalog({ auth, courses }) {
     const closeModal = () => {
         setSelectedCourse(null);
         reset();
+        if (preview) URL.revokeObjectURL(preview); // Clean up memory
         setPreview(null);
     };
 
     const handleImageChange = (e) => {
         const file = e.target.files[0];
+        if (!file) return;
+
+        // Revoke preview lama jika ada
+        if (preview) URL.revokeObjectURL(preview);
+
         setData('bukti_pembayaran', file);
-        if (file) setPreview(URL.createObjectURL(file));
+        setPreview(URL.createObjectURL(file));
     };
 
     const copyToClipboard = (text) => {
+        if (!text) return;
         navigator.clipboard.writeText(text);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -55,7 +61,6 @@ export default function Catalog({ auth, courses }) {
         });
     };
 
-    // Fungsi pembantu untuk mengecek apakah bank aktif (mengantisipasi string 'true', boolean true, atau angka 1)
     const isBankActive = (status) => status == true || status == 'true' || status == '1';
 
     return (
@@ -158,7 +163,7 @@ export default function Catalog({ auth, courses }) {
 
             <AnimatePresence>
                 {selectedCourse && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-hidden">
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -171,26 +176,28 @@ export default function Catalog({ auth, courses }) {
                             initial={{ scale: 0.95, opacity: 0, y: 20 }} 
                             animate={{ scale: 1, opacity: 1, y: 0 }} 
                             exit={{ scale: 0.95, opacity: 0, y: 20 }} 
-                            className="relative z-10 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border border-slate-100 max-h-[95vh]"
+                            className="relative z-10 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border border-slate-100 max-h-[90vh]"
                         >
+                            {/* Modal Header */}
                             <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 shrink-0">
                                 <h2 className="text-lg font-black text-blue-950 flex items-center gap-2">
                                     <CreditCard size={20} className="text-blue-600"/> Checkout Kelas
                                 </h2>
-                                <button onClick={closeModal} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl">
+                                <button onClick={closeModal} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl transition-colors">
                                     <X size={20} strokeWidth={2.5} />
                                 </button>
                             </div>
 
+                            {/* Form Area - Scrollable */}
                             <form onSubmit={submit} className="p-6 md:p-8 space-y-6 overflow-y-auto custom-scrollbar">
-                                <div className="p-6 bg-gradient-to-br from-blue-950 to-blue-900 rounded-2xl relative overflow-hidden text-white">
+                                <div className="p-6 bg-gradient-to-br from-blue-950 to-blue-900 rounded-2xl relative overflow-hidden text-white shadow-inner">
                                     <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1.5">Total Tagihan</p>
                                     <p className="text-3xl font-black text-white mb-6 tracking-tight">
                                         {formatRupiah(selectedCourse.harga)}
                                     </p>
                                     
                                     <div className="space-y-3 relative z-10">
-                                        <label className="block text-xs font-bold text-blue-200">Pilih Metode Pembayaran:</label>
+                                        <label className="block text-xs font-bold text-blue-200 uppercase tracking-tighter">Pilih Metode Pembayaran:</label>
                                         <div className="relative">
                                             <select 
                                                 value={data.payment_method} 
@@ -208,17 +215,19 @@ export default function Catalog({ auth, courses }) {
                                                 <option value="qris" className="text-slate-900">QRIS</option>
                                             </select>
                                             <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-blue-200">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                                <ChevronRight size={18} className="rotate-90" />
                                             </div>
                                         </div>
 
-                                        {/* DETAIL REKENING BERDASARKAN PILIHAN DROPDOWN */}
                                         <AnimatePresence mode="wait">
                                             {data.payment_method === 'bank1' && isBankActive(app_settings?.bank1_active) && (
-                                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 flex items-center gap-3.5 mt-3 overflow-hidden">
-                                                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0">
-                                                        <Landmark size={20} />
-                                                    </div>
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: -10 }} 
+                                                    animate={{ opacity: 1, y: 0 }} 
+                                                    exit={{ opacity: 0, scale: 0.95 }} 
+                                                    className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 flex items-center gap-3.5 mt-3 overflow-hidden shadow-sm"
+                                                >
+                                                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0"><Landmark size={20} /></div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-[10px] font-bold text-blue-200 uppercase">{app_settings.bank1_name}</p>
                                                         <p className="text-lg font-black text-white font-mono tracking-widest">{app_settings.bank1_number}</p>
@@ -231,10 +240,13 @@ export default function Catalog({ auth, courses }) {
                                             )}
 
                                             {data.payment_method === 'bank2' && isBankActive(app_settings?.bank2_active) && (
-                                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 flex items-center gap-3.5 mt-3 overflow-hidden">
-                                                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0">
-                                                        <Landmark size={20} />
-                                                    </div>
+                                                <motion.div 
+                                                    initial={{ opacity: 0, y: -10 }} 
+                                                    animate={{ opacity: 1, y: 0 }} 
+                                                    exit={{ opacity: 0, scale: 0.95 }} 
+                                                    className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 flex items-center gap-3.5 mt-3 overflow-hidden shadow-sm"
+                                                >
+                                                    <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0"><Landmark size={20} /></div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-[10px] font-bold text-blue-200 uppercase">{app_settings.bank2_name}</p>
                                                         <p className="text-lg font-black text-white font-mono tracking-widest">{app_settings.bank2_number}</p>
@@ -247,18 +259,17 @@ export default function Catalog({ auth, courses }) {
                                             )}
 
                                             {data.payment_method === 'qris' && (
-                                                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="bg-white text-center p-4 rounded-xl mt-3 overflow-hidden">
+                                                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="bg-white text-center p-4 rounded-xl mt-3 overflow-hidden shadow-sm">
                                                     <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2">Scan Kode QRIS</p>
                                                     <img src="/assets/images/qris.png" alt="QRIS" className="mx-auto w-32 h-32 rounded-lg border border-slate-200 object-contain" />
-                                                    <p className="text-[10px] text-slate-500 mt-2">Scan melalui aplikasi E-Wallet atau M-Banking</p>
+                                                    <p className="text-[10px] text-slate-500 mt-2 font-medium">Scan melalui E-Wallet atau M-Banking</p>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
 
-                                        {/* PESAN JIKA TIDAK ADA BANK AKTIF SAMA SEKALI */}
-                                        {!isBankActive(app_settings?.bank1_active) && !isBankActive(app_settings?.bank2_active) && (
+                                        {!isBankActive(app_settings?.bank1_active) && !isBankActive(app_settings?.bank2_active) && !data.payment_method && (
                                             <div className="bg-rose-500/20 backdrop-blur-md p-3 rounded-xl border border-rose-500/30">
-                                                <p className="text-xs text-rose-200 font-bold text-center">Metode pembayaran bank belum dikonfigurasi oleh Admin.</p>
+                                                <p className="text-xs text-rose-200 font-bold text-center">Metode pembayaran bank sedang tidak tersedia.</p>
                                             </div>
                                         )}
                                     </div>
@@ -268,26 +279,39 @@ export default function Catalog({ auth, courses }) {
                                     <label className="text-sm font-black text-slate-700 mb-2.5 flex items-center gap-2">
                                         <Receipt size={16} className="text-blue-600"/> Upload Bukti Transfer
                                     </label>
-                                    <div className="relative w-full h-40 rounded-[1.25rem] border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center overflow-hidden group hover:border-blue-500 transition-all cursor-pointer">
+                                    <div className="relative w-full h-44 rounded-[1.25rem] border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center overflow-hidden group hover:border-blue-500 transition-all cursor-pointer">
                                         {preview ? (
-                                            <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                            <div className="relative w-full h-full group">
+                                                <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <p className="text-white text-xs font-bold bg-blue-600 px-3 py-1 rounded-full">Ganti Foto</p>
+                                                </div>
+                                            </div>
                                         ) : (
                                             <div className="text-center p-4">
-                                                <Upload size={18} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                                <p className="text-sm text-slate-500 font-bold group-hover:text-blue-500 transition-colors">Pilih foto struk</p>
+                                                <Upload size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                                                <p className="text-sm text-slate-500 font-bold group-hover:text-blue-500 transition-colors">Pilih foto struk / screenshot</p>
+                                                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">Format: JPG, PNG, WEBP</p>
                                             </div>
                                         )}
                                         <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
                                     </div>
-                                    {errors.bukti_pembayaran && <p className="text-rose-500 text-xs font-bold mt-2">{errors.bukti_pembayaran}</p>}
+                                    {errors.bukti_pembayaran && <p className="text-rose-500 text-xs font-bold mt-2 flex items-center gap-1"><X size={12}/> {errors.bukti_pembayaran}</p>}
                                 </div>
 
                                 <button 
                                     type="submit" 
                                     disabled={processing || !data.bukti_pembayaran || !data.payment_method} 
-                                    className="w-full py-4 bg-blue-950 text-white rounded-xl font-black disabled:opacity-50 flex items-center justify-center gap-2.5 shadow-lg active:scale-95 transition-all"
+                                    className="w-full py-4 bg-blue-950 text-white rounded-xl font-black disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2.5 shadow-lg shadow-blue-950/20 active:scale-[0.98] transition-all"
                                 >
-                                    {processing ? 'Mengunggah...' : 'Kirim Bukti Pembayaran'} <CheckCircle2 size={18} />
+                                    {processing ? (
+                                        <span className="flex items-center gap-2">
+                                            <svg className="animate-spin h-5 w-5 text-white" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            Mengunggah...
+                                        </span>
+                                    ) : (
+                                        <>Kirim Konfirmasi Pembayaran <CheckCircle2 size={18} /></>
+                                    )}
                                 </button>
                             </form>
                         </motion.div>
