@@ -1,18 +1,21 @@
 import { Link } from '@inertiajs/react';
-// TAMBAHAN: Jangan lupa import icon TrendingUp di sini
-import { LayoutDashboard, Users, BookOpen, Settings, X, ShieldCheck, TrendingUp } from 'lucide-react';
+// Import Newspaper untuk Berita & Kegiatan
+import { LayoutDashboard, Users, BookOpen, Settings, X, ShieldCheck, TrendingUp, Newspaper } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
     // Menu Admin
     const menuItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, route: 'dashboard', active: route().current('dashboard') },
+        { name: 'Dashboard', icon: <LayoutDashboard size={20} />, route: 'admin.dashboard', active: route().current('admin.dashboard') },
         
-        // TAMBAHAN: Menu Laporan Keuangan dimasukkan ke dalam array ini
         { name: 'Laporan Keuangan', icon: <TrendingUp size={20} />, route: 'admin.finance.index', active: route().current('admin.finance.*') },
         
         { name: 'Manajemen Admin', icon: <ShieldCheck size={20} />, route: 'admin.management.index', active: route().current('admin.management.*') },
         { name: 'Manejemen Member', icon: <Users size={20} />, route: 'admin.members.index', active: route().current('admin.members.*') },
         { name: 'Manajemen Kelas', icon: <BookOpen size={20} />, route: 'admin.courses.index', active: route().current('admin.courses.*') },
+        
+        // MENU BARU: Berita & Kegiatan
+        { name: 'Berita & Kegiatan', icon: <Newspaper size={20} />, route: 'admin.posts.index', active: route().current('admin.posts.*') },
+        
         { name: 'Konfigurasi', icon: <Settings size={20} />, route: 'admin.settings.index', active: route().current('admin.settings.*') },
     ];
 
@@ -29,7 +32,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                 
                 <div className="flex items-center justify-between h-20 px-6 border-b border-slate-100">
                     <Link href="/" className="flex items-center gap-3 text-2xl font-black text-slate-800 tracking-tight">
-                    <div className="p-2 bg-blue-700 rounded-lg text-white shadow-md shadow-blue-900/20">
+                        <div className="p-2 bg-blue-700 rounded-lg text-white shadow-md shadow-blue-900/20">
                             <BookOpen size={20} strokeWidth={2.5} />
                         </div>
                         Miqot<span className="text-blue-700">Admin</span>
@@ -42,7 +45,6 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                     {menuItems.map((item, index) => (
                         <Link
                             key={index}
-                            // Kita pakai operator chaining (?.) berjaga-jaga jika ada rute yang belum terdaftar di web.php
                             href={item.route === '#' ? '#' : route(item.route)}
                             className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group font-semibold text-sm ${
                                 item.active 

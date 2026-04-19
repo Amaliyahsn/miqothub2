@@ -17,8 +17,8 @@ class Review extends Model
         'tampilkan_di_landing'
     ];
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
+public function user()
+{
+    return $this->belongsTo(User::class);
+}
 }

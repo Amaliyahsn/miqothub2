@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CurriculumController;
 use App\Http\Controllers\Admin\DashboardController; 
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Member\ReviewController;
+use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\Member\CourseController as MemberCourseController;
 use App\Http\Controllers\Member\ExerciseController;
 use Illuminate\Support\Facades\Route;
@@ -19,7 +20,7 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    // 1. Ambil Data Courses
+    // 1. Ambil Data Courses (Sudah benar)
     $courses = \App\Models\Course::where('status', 'onsale')
         ->with(['chapters.materials' => function ($query) {
             $query->where('is_preview', true);
@@ -30,16 +31,22 @@ Route::get('/', function () {
             return $course;
         });
 
-    // 2. Ambil Data Ulasan (Rating >= 4)
-    $reviews = \App\Models\Review::with('user:id,name')
-        ->where('tampilkan_di_landing', true)
-        ->where('rating', '>=', 4)
-        ->latest()
-        ->take(6)
-        ->get();
+$reviews = \App\Models\Review::with('user:id,name')
+    ->where('tampilkan_di_landing', true)
+    ->where('rating', '>=', 4)
+    ->latest()
+    ->get(); // 🔥 HAPUS take(6)
 
-    // 3. Ambil Pengaturan Situs
+    // 3. Ambil Pengaturan Situs (Sudah benar)
     $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
+
+    // --- TAMBAHKAN BAGIAN INI AGAR TIDAK ERROR ---
+    // 4. Ambil Data Berita/Kegiatan Terbaru
+    $latestPosts = \App\Models\Post::latest()->take(6)->get()->map(function ($post) {
+        // Tambahkan URL gambar agar bisa tampil di frontend
+        $post->image_url = $post->image ? asset('storage/' . $post->image) : null;
+        return $post;
+    });
 
     return Inertia::render('Welcome', [
         'canLogin' => Route::has('login'),
@@ -47,6 +54,7 @@ Route::get('/', function () {
         'courses' => $courses, 
         'settings' => $settings,
         'reviews' => $reviews,
+        'latestPosts' => $latestPosts, // Sekarang variabel ini sudah ada isinya
     ]);
 })->name('welcome');
 
@@ -165,6 +173,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
     Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
+
+    Route::resource('posts', PostController::class);
     
 });
 
