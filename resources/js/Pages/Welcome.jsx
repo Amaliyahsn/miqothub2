@@ -15,6 +15,8 @@ import {
     ChevronRight,
     Play,
     Star,
+    Calendar, // Ditambahkan untuk hero
+    MapPin    // Ditambahkan untuk hero
 } from "lucide-react";
 
 export default function Welcome({
@@ -87,51 +89,28 @@ export default function Welcome({
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] selection:bg-blue-500 selection:text-white relative overflow-x-hidden scroll-smooth">
+        <div className="min-h-screen bg-white text-slate-900 font-['Plus_Jakarta_Sans',sans-serif] selection:bg-blue-500 selection:text-white relative overflow-x-hidden scroll-smooth">
             <Head title="Platform Pembelajaran Digital" />
 
-            {/* Background Gradient Soft */}
-            <div className="absolute top-0 w-full h-[70vh] bg-gradient-to-b from-blue-50/50 via-white to-[#F8FAFC] z-0 pointer-events-none"></div>
-
-            {/* Navigation */}
-            <nav className="fixed top-0 w-full z-40 transition-all duration-300 bg-white/80 backdrop-blur-md border-b border-slate-200/50">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3.5 flex justify-between items-center">
+            {/* Navigation - Diubah menjadi tema gelap/transparan agar menyatu dengan background */}
+            <nav className="fixed top-0 w-full z-50 transition-all duration-300 bg-[#white]/80 backdrop-blur-md border-b border-white/10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="text-xl sm:text-2xl font-black tracking-tighter text-slate-900 flex items-center gap-2"
+                        className="text-xl sm:text-2xl font-black tracking-tighter text-white flex items-center gap-2"
                     >
                         <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-sm">
                             <BookOpen size={18} strokeWidth={2.5} />
                         </div>
-                        Miqot<span className="text-blue-600">Hub</span>
+                        Miqot<span className="text-blue-400">Hub</span>
                     </motion.div>
-
-                    {/* <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="text-xl sm:text-2xl font-black tracking-tighter text-slate-900 flex items-center gap-2"
-                >
-                    {/* Container Logo Kustom */}
-                    {/* <div className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center overflow-hidden">
-                        <img 
-                            src="/logo4.png" 
-                            alt="MiqotHub Logo" 
-                            className="w-full h-full object-contain"
-                        />
-                    </div>
-
-                    {/* Teks Brand */}
-                    {/* <span>
-                        Miqot<span className="text-blue-600">Hub</span>
-                    </span>
-                    </motion.div> */}
 
                     <div className="flex items-center gap-2 sm:gap-4">
                         {auth?.user ? (
                             <Link
                                 href={route("dashboard")}
-                                className="font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 bg-slate-900 text-white rounded-full hover:bg-blue-600 transition-colors duration-300 shadow-sm"
+                                className="font-semibold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 bg-white text-[#0B1E20] rounded-full hover:bg-slate-200 transition-colors duration-300 shadow-sm"
                             >
                                 Dashboard
                             </Link>
@@ -139,18 +118,18 @@ export default function Welcome({
                             <>
                                 <Link
                                     href={route("login")}
-                                    className="font-semibold text-sm text-slate-600 
+                                    className="font-semibold text-sm text-white/80 
                                 px-4 py-2 rounded-full 
-                                border border-slate-200/70 
-                                hover:border-blue-400 hover:text-blue-600 
-                                hover:bg-blue-50/50 
+                                border border-white/20 
+                                hover:border-white hover:text-white 
+                                hover:bg-white/10 
                                 transition-all duration-300 hidden sm:block"
                                 >
                                     Masuk
                                 </Link>
                                 <Link
                                     href={route("register")}
-                                    className="font-semibold text-xs sm:text-sm px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
+                                    className="font-semibold text-xs sm:text-sm px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-500 hover:shadow-lg hover:shadow-blue-500/20 transition-all duration-300"
                                 >
                                     Daftar Sekarang
                                 </Link>
@@ -160,113 +139,104 @@ export default function Welcome({
                 </div>
             </nav>
 
-            {/* DIKURANGI pb-20 ke pb-8 agar tidak terlalu jauh ke bawah */}
-            <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 sm:pt-32 md:pt-40 pb-8 md:pb-12">
-                <div className="flex flex-col-reverse lg:flex-row items-center gap-12 lg:gap-10">
-                    {/* ================= LEFT CONTENT ================= */}
+            {/* ================= HERO SECTION (FULL BACKGROUND) ================= */}
+            <main 
+                className="relative z-10 w-full min-h-[90vh] md:min-h-screen flex items-center bg-cover bg-center bg-no-repeat pt-20"
+                style={{ backgroundImage: "url('/assets/images/lp-1.png')" }}
+            >
+                {/* Ultra-Thin Cinematic Overlay */}
+                <div className="absolute inset-0 z-0">
+                    {/* Lapisan 1: Gradien Dasar yang sangat tipis (Hanya untuk menjaga kontras teks di sisi kiri) */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-slate-900/70 via-slate-900/30 to-transparent"></div>
+                    
+                    {/* Lapisan 2: Vignette yang lebih transparan (Hanya menggelapkan bagian tepi layar secara halus) */}
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_transparent_40%,_rgba(15,23,42,0.25)_100%)]"></div>
+                </div>
+
+                <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
                     <motion.div
-                        className="flex-1 text-center lg:text-left lg:pl-8 xl:pl-12"
+                        className="max-w-3xl text-left"
                         variants={staggerContainer}
                         initial="hidden"
                         animate="visible"
                     >
-                        {/* Badge */}
+                        {/* Meta Info Header */}
                         <motion.div
                             variants={fadeUpVariant}
-                            className="mb-5 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] sm:text-xs font-bold tracking-wider uppercase"
+                            className="flex flex-wrap items-center gap-4 sm:gap-6 text-white/80 text-xs sm:text-sm font-bold tracking-wider uppercase mb-8"
                         >
-                            <Sparkles size={14} className="text-amber-500" />{" "}
-                            Platform Edukasi Digital
+                            <div className="flex items-center gap-2 text-blue-400 border-b border-blue-400 pb-1">
+                                <Sparkles size={16} /> 
+                                Edukasi Digital
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <MapPin size={16} />
+                                Online Platform
+                            </div>
                         </motion.div>
 
                         {/* Title */}
                         <motion.h1
                             variants={fadeUpVariant}
-                            className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.2] mb-4"
+                            className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight text-white leading-[1.1] mb-6"
                         >
                             Bantu Kamu Lolos <br />
-                            <span className="text-blue-600">TKH & PPIH</span>
+                            <span className="text-blue-400">TKH & PPIH</span>
                         </motion.h1>
-
-                        {/* Subtitle */}
-                        <motion.h2
-                            variants={fadeUpVariant}
-                            className="text-lg sm:text-xl md:text-2xl font-semibold text-slate-700 mb-4"
-                        >
-                            Siap Berangkat ke Tanah Suci!
-                        </motion.h2>
 
                         {/* Description */}
                         <motion.p
                             variants={fadeUpVariant}
-                            className="text-sm sm:text-base md:text-lg text-slate-500 mb-8 max-w-lg mx-auto lg:mx-0 leading-relaxed"
+                            className="text-base sm:text-lg md:text-xl text-white/80 mb-10 max-w-xl leading-relaxed font-light"
                         >
                             Materi disusun sederhana, mudah dipahami, dan
                             langsung bisa digunakan dalam situasi nyata untuk
                             persiapan menjadi Petugas Haji ke Tanah Suci.
                         </motion.p>
 
-                        {/* CTA */}
-                        <motion.div
-                            variants={fadeUpVariant}
-                            className="flex flex-col sm:flex-row justify-center lg:justify-start items-center gap-3 sm:gap-4"
-                        >
-                            <Link
-                                href={route("register")}
-                                className="w-full sm:w-auto px-7 py-3.5 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition-all duration-300 shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 text-sm"
-                            >
-                                Daftar Sekarang
-                                <ArrowRight
-                                    size={18}
-                                    className="group-hover:translate-x-1 transition-transform"
-                                />
-                            </Link>
+                      {/* CTA Buttons */}
+<motion.div
+    variants={fadeUpVariant}
+    className="flex flex-col sm:flex-row items-center gap-4 mt-4 w-full sm:w-auto"
+>
+    <Link
+        href={route("register")}
+        className="group relative w-full sm:w-auto px-10 py-4 bg-blue-600 text-white rounded-2xl font-bold uppercase tracking-widest text-xs sm:text-sm overflow-hidden transition-all duration-300 hover:bg-blue-500 hover:shadow-[0_0_30px_rgba(37,99,235,0.4)] hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
+    >
+        {/* Efek kilauan saat hover */}
+        <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+        
+        <span>Daftar Sekarang</span>
+        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform duration-300" />
+    </Link>
 
-                            <a
-                                href="#fitur"
-                                className="w-full sm:w-auto px-7 py-3.5 bg-white text-slate-700 border border-slate-200 rounded-xl font-semibold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 text-sm"
-                            >
-                                Lihat Fitur
-                                <ChevronRight
-                                    size={18}
-                                    className="text-blue-600"
-                                />
-                            </a>
-                        </motion.div>
-                    </motion.div>
+    <a
+        href="#fitur"
+        className="w-full sm:w-auto px-10 py-4 bg-white/5 backdrop-blur-md text-white border border-white/20 rounded-2xl font-bold uppercase tracking-widest text-xs sm:text-sm transition-all duration-300 hover:bg-white/10 hover:border-white/40 hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3 group"
+    >
+        <span>Lihat Fitur</span>
+        <ChevronRight size={20} className="text-blue-400 group-hover:translate-x-1 transition-transform duration-300" />
+    </a>
+</motion.div>
 
-                    {/* ================= RIGHT IMAGE ================= */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ duration: 0.8, delay: 0.2 }}
-                        className="flex-1 flex justify-center"
-                    >
-                        <div className="relative flex items-center justify-center">
-                            {/* Glow */}
-                            <div
-                                className="absolute w-[260px] h-[260px] sm:w-[360px] sm:h-[360px] md:w-[420px] md:h-[420px] 
-                                bg-gradient-to-tr from-blue-400/10 to-indigo-200/10 
-                                rounded-full blur-3xl"
-                            ></div>
-
-                            {/* Image */}
-                            <div className="relative z-10 w-[220px] sm:w-[300px] md:w-[360px] flex justify-center">
-                                <img
-                                    src="/assets/images/bg3.png"
-                                    alt="Makkah"
-                                    className="w-[120%] md:w-[130%] max-w-none h-auto object-contain 
-                                               translate-y-4 sm:translate-y-8"
-                                />
-                            </div>
-                        </div>
+{/* Tambahkan ini di file CSS global atau di dalam tag <style> jika menggunakan Tailwind biasa */}
+<style jsx>{`
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+`}</style>
                     </motion.div>
                 </div>
 
-                {/* ================= DIVIDER ================= */}
-                {/* DIKURANGI mt-20 menjadi mt-10 agar lebih dekat */}
-                <div className="mt-10 md:mt-16 relative">
-                    <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-300 to-transparent"></div>
+                {/* Bottom Stats / Categories Bar */}
+                <div className="absolute bottom-0 left-0 w-full border-t border-white/10 bg-[#white]/50 backdrop-blur-md hidden md:block">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between text-white/60 text-xs font-bold uppercase tracking-[0.2em]">
+                        <span className="hover:text-white cursor-pointer transition-colors">Materi Lengkap</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">Latihan soal</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">Zoom Class</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">E-book</span>
+                        <span className="hover:text-white cursor-pointer transition-colors">Komunitas</span>
+                    </div>
                 </div>
             </main>
 
@@ -404,75 +374,79 @@ export default function Welcome({
 </section>
 
 
-            <section
-                id="fitur"
-                className="relative z-10 py-16 md:py-24 bg-white border-t border-slate-100"
+<section
+    id="fitur"
+    /* Dikurangi dari py-16/24 menjadi py-10 md:py-14 untuk merapatkan jarak antar section */
+    className="relative z-10 py-10 md:py-14 bg-white border-t border-slate-100"
+>
+    <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, margin: "-50px" }}
+        variants={staggerContainer}
+        className="max-w-7xl mx-auto px-4 sm:px-6"
+    >
+        {/* mb-10/16 dikurangi menjadi mb-8 md:mb-10 agar judul lebih dekat ke kartu fitur */}
+        <div className="text-center mb-8 md:mb-10">
+            <motion.h2
+                variants={fadeUpVariant}
+                className="text-2xl sm:text-3xl font-black text-slate-900 mb-2"
             >
-                <motion.div
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{ once: true, margin: "-50px" }}
-                    variants={staggerContainer}
-                    className="max-w-7xl mx-auto px-4 sm:px-6"
-                >
-                    <div className="text-center mb-10 md:mb-16">
-                        <motion.h2
-                            variants={fadeUpVariant}
-                            className="text-2xl sm:text-3xl font-black text-slate-900 mb-3"
-                        >
-                            Fitur Pembelajaran
-                        </motion.h2>
-                        <motion.p
-                            variants={fadeUpVariant}
-                            className="text-slate-500 text-sm sm:text-base max-w-2xl mx-auto px-2"
-                        >
-                            Sistem cerdas (LMS) yang terstruktur untuk hasil
-                            belajar yang maksimal.
-                        </motion.p>
-                    </div>
+                Fitur Pembelajaran
+            </motion.h2>
+            <motion.p
+                variants={fadeUpVariant}
+                className="text-slate-500 text-sm sm:text-base max-w-2xl mx-auto px-2 leading-relaxed"
+            >
+                Sistem cerdas (LMS) yang terstruktur untuk hasil
+                belajar yang maksimal.
+            </motion.p>
+        </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {[
-                            {
-                                icon: BookOpen,
-                                title: "Materi Terstruktur",
-                                desc: "Modul pembelajaran yang selalu diperbarui, dilengkapi video, PDF, dan text interaktif.",
-                            },
-                            {
-                                icon: ShieldCheck,
-                                title: "Evaluasi Instan",
-                                desc: "Latihan soal berbasis komputer (CBT) yang merekam dan menilai progres otomatis.",
-                            },
-                            {
-                                icon: MessageSquareShare,
-                                title: "Notifikasi Cepat",
-                                desc: "Tetap terhubung dengan kelas Anda. Dapatkan update jadwal secara langsung.",
-                            },
-                            {
-                                icon: Award,
-                                title: "Rekap Terpadu",
-                                desc: "Pantau nilai latihan, masa aktif kelas, dan kelola profil Anda dengan mudah.",
-                            },
-                        ].map((fitur, idx) => (
-                            <motion.div
-                                key={idx}
-                                variants={fadeUpVariant}
-                                className="p-6 sm:p-8 bg-[#F8FAFC] rounded-[1.5rem] border border-slate-100 hover:border-blue-200 transition-colors duration-300"
-                            >
-                                <div className="w-12 h-12 bg-white border border-slate-200 text-blue-600 rounded-xl flex items-center justify-center mb-5 shadow-sm">
-                                    <fitur.icon size={22} strokeWidth={2.5} />
-                                </div>
-                                <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-2">
-                                    {fitur.title}
-                                </h3>
-                                <p className="text-slate-500 text-xs sm:text-sm leading-relaxed">
-                                    {fitur.desc}
-                                </p>
-                            </motion.div>
-                        ))}
+        {/* Gap antar grid dirapatkan sedikit untuk tampilan laptop yang lebih padat */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+            {[
+                {
+                    icon: BookOpen,
+                    title: "Materi Terstruktur",
+                    desc: "Modul pembelajaran yang selalu diperbarui, dilengkapi video, PDF, dan text interaktif.",
+                },
+                {
+                    icon: ShieldCheck,
+                    title: "Evaluasi Instan",
+                    desc: "Latihan soal berbasis komputer (CBT) yang merekam dan menilai progres otomatis.",
+                },
+                {
+                    icon: MessageSquareShare,
+                    title: "Notifikasi Cepat",
+                    desc: "Tetap terhubung dengan kelas Anda. Dapatkan update jadwal secara langsung.",
+                },
+                {
+                    icon: Award,
+                    title: "Rekap Terpadu",
+                    desc: "Pantau nilai latihan, masa aktif kelas, dan kelola profil Anda dengan mudah.",
+                },
+            ].map((fitur, idx) => (
+                <motion.div
+                    key={idx}
+                    variants={fadeUpVariant}
+                    /* p-6 sm:p-8 diubah menjadi p-6 agar tinggi kartu tidak terlalu dominan */
+                    className="p-6 bg-[#F8FAFC] rounded-2xl border border-slate-100 hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 group"
+                >
+                    <div className="w-11 h-11 bg-white border border-slate-200 text-blue-600 rounded-xl flex items-center justify-center mb-4 shadow-sm group-hover:scale-110 transition-transform duration-300">
+                        <fitur.icon size={20} strokeWidth={2.5} />
                     </div>
+                    <h3 className="text-base font-bold text-slate-900 mb-1.5">
+                        {fitur.title}
+                    </h3>
+                    <p className="text-slate-500 text-xs sm:text-[13px] leading-relaxed">
+                        {fitur.desc}
+                    </p>
                 </motion.div>
-            </section>
+            ))}
+        </div>
+    </motion.div>
+</section>
 
             {/* --- TESTIMONY SECTION WITH DARK MESH GRADIENT --- */}
             <section
