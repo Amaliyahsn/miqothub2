@@ -1,17 +1,24 @@
 <x-mail::message>
-# Halo Admin MiqotHub,
+# Notifikasi Transaksi Baru
 
-Ada transaksi baru yang masuk. Mohon segera cek bukti pembayaran di Dashboard Admin.
+Halo Admin **MiqotHub**,
 
-**Detail Transaksi:**
-- **Nama Member:** {{ $data['nama_member'] }}
-- **Program Kelas:** {{ $data['nama_kelas'] }}
-- **Metode Bayar:** {{ $data['metode_pembayaran'] }}
+Laporan sistem menunjukkan adanya transaksi baru yang memerlukan perhatian Anda. Mohon segera melakukan verifikasi pada bukti pembayaran melalui panel admin.
 
-<x-mail::button :url="url('/admin/dashboard')">
-Cek Dashboard Admin
+<x-mail::panel>
+### Ringkasan Pesanan
+* **Nama Member:** {{ $data['nama_member'] }}
+* **Program Kelas:** {{ $data['nama_kelas'] }}
+* **Metode Bayar:** {{ $data['metode_pembayaran'] }}
+</x-mail::panel>
+
+<x-mail::button :url="route('admin.dashboard')" color="primary">
+Verifikasi di Dashboard
 </x-mail::button>
 
+Jika tombol di atas tidak berfungsi, Anda dapat menyalin tautan berikut ke browser Anda:
+[{{ route('admin.dashboard') }}]({{ route('admin.dashboard') }})
+
 Terima kasih,<br>
-Sistem Otomatis {{ config('app.name') }}
+**Tim Sistem {{ config('app.name') }}**
 </x-mail::message>

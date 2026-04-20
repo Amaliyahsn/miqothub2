@@ -2,15 +2,17 @@ import { useEffect, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import { 
-    User, Mail, Lock, MapPin, Briefcase, Heart, UserPlus, 
-    ArrowLeft, Upload, CheckSquare, Receipt, CalendarDays, BookOpen, Sparkles, Phone, ChevronDown, Copy, Check
+    User, Mail, Lock, MapPin, Briefcase, Heart, 
+    ArrowLeft, Upload, CheckSquare, Receipt, CalendarDays, 
+    Sparkles, Phone, ChevronDown, Copy, Check, ArrowRight, 
+    LayoutGrid, CheckCircle2, ShieldCheck
 } from 'lucide-react';
 
 export default function Register({ courses }) {
-    const { app_settings = {} } = usePage().props;
+    const { app_settings = {}, auth } = usePage().props;
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '', email: '', alamat: '', pekerjaan: '', umur: '', status: '',
+        name: '', email: '', alamat: '', pekerjaan: '', umur: null, status: '',
         password: '', password_confirmation: '',
         course_ids: [], 
         bukti_pembayaran: null,
@@ -19,6 +21,12 @@ export default function Register({ courses }) {
     const [preview, setPreview] = useState(null);
     const [selectedMethod, setSelectedMethod] = useState('');
     const [copied, setCopied] = useState(false);
+
+    // Animasi Variants
+    const fadeUpVariant = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+    };
 
     useEffect(() => {
         return () => reset('password', 'password_confirmation');
@@ -53,6 +61,7 @@ export default function Register({ courses }) {
 
     const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 
+    const activeCourses = courses.filter(course => !course.is_expired);
     const selectedCourses = courses.filter(c => data.course_ids.includes(c.id));
     const totalPrice = selectedCourses.reduce((sum, course) => sum + course.harga, 0);
 
@@ -66,67 +75,76 @@ export default function Register({ courses }) {
                 </Link>
 
                 <motion.div 
-                    initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} 
+                    initial={{ opacity: 0, y: 15 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    transition={{ duration: 0.3 }} 
                     className="w-full bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 flex flex-col md:flex-row overflow-visible"
                 >
-                    <div className="w-full md:w-[42%] bg-slate-900 p-8 sm:p-10 lg:p-12 text-white flex flex-col relative shrink-0 md:rounded-l-[2rem] rounded-t-[2rem] md:rounded-tr-none">
+                    {/* LEFT COLUMN: Course Selection & Payment */}
+                    <div className="w-full md:w-[45%] bg-slate-900 p-6 sm:p-10 text-white flex flex-col relative shrink-0 md:rounded-l-[2rem] rounded-t-[2rem] md:rounded-tr-none">
                         <img 
                             src="/assets/images/bg-login.jpg" 
-                            className="absolute inset-0 w-full h-full object-cover opacity-[0.12] blur-md scale-105 pointer-events-none"
+                            className="absolute inset-0 w-full h-full object-cover opacity-[0.08] blur-sm pointer-events-none"
                             alt="Background" 
                         />
                         
-                        <div className="mb-10">
+                        <div className="relative z-10 mb-8">
                             <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-6 text-white shadow-md">
-                                <BookOpen size={24} strokeWidth={2.5}/>
+                                <LayoutGrid size={24} strokeWidth={2.5}/>
                             </div>
-                            <h2 className="text-3xl font-black mb-3 text-white leading-tight">Pilih Program &<br/>Metode Bayar</h2>
-                            <p className="text-slate-300 text-sm font-medium leading-relaxed">Tentukan kelas yang ingin diikuti, lalu lakukan pembayaran sesuai instruksi di bawah.</p>
+                            <h2 className="text-3xl font-black mb-3 leading-tight">Pilih Program &<br/>Pembayaran</h2>
+                            <p className="text-slate-400 text-sm font-medium">Klik pada kartu kelas untuk memilih.</p>
                         </div>
 
-                        <div className="space-y-4 mb-12">
-                            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-4">Kelas Tersedia ({courses.length})</h3>
-                            {courses.length === 0 ? (
-                                <div className="p-6 bg-slate-800 rounded-2xl border border-slate-700 text-center">
-                                    <p className="text-sm font-medium text-slate-400">Mohon maaf, saat ini belum ada kelas yang dibuka.</p>
+                        {/* LOGIKA FILTER & RESPONSIVE GRID/SCROLL */}
+                        <div className="relative z-10 space-y-4 mb-8">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Kelas Tersedia ({activeCourses.length})</h3>
+                                <div className="md:hidden flex items-center gap-1 text-blue-400 text-[10px] font-bold animate-pulse">
+                                    <span>Geser</span> <ArrowRight size={12} />
+                                </div>
+                            </div>
+
+                            {activeCourses.length === 0 ? (
+                                <div className="p-10 bg-slate-800/50 rounded-3xl border-2 border-dashed border-slate-700 text-center">
+                                    <ShieldCheck size={40} className="mx-auto text-slate-600 mb-3" />
+                                    <p className="text-sm font-medium text-slate-500">Belum ada kelas yang dibuka.</p>
                                 </div>
                             ) : (
-                                courses.map(course => (
-                                    <div 
-                                        key={course.id} 
-                                        onClick={() => toggleCourse(course.id)}
-                                        className={`p-5 rounded-2xl cursor-pointer border-2 transition-all duration-200 group ${data.course_ids.includes(course.id) ? 'bg-slate-800 border-blue-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}`}
-                                    >
-                                        <div className="flex justify-between items-start mb-3 gap-3">
-                                            <h3 className="font-bold text-base leading-tight flex-1 text-white group-hover:text-blue-400 transition-colors">{course.nama}</h3>
-                                            <div className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors mt-0.5 ${data.course_ids.includes(course.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-500 text-transparent'}`}>
-                                                <CheckSquare size={16} strokeWidth={3} />
+                                <div className="flex md:flex-col overflow-x-auto md:overflow-visible gap-4 pb-4 md:pb-0 snap-x scrollbar-hide">
+                                    {activeCourses.map(course => (
+                                        <motion.div 
+                                            key={course.id} 
+                                            onClick={() => toggleCourse(course.id)}
+                                            className={`min-w-[80vw] md:min-w-full snap-center p-5 rounded-2xl cursor-pointer border-2 transition-all duration-300 group ${data.course_ids.includes(course.id) ? 'bg-slate-800 border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-slate-800/40 border-slate-700/50 hover:border-slate-500'}`}
+                                        >
+                                            <div className="flex justify-between items-start gap-3">
+                                                <h3 className={`font-bold text-sm sm:text-base leading-tight flex-1 transition-colors ${data.course_ids.includes(course.id) ? 'text-blue-400' : 'text-white'}`}>
+                                                    {course.nama}
+                                                </h3>
+                                                <div className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${data.course_ids.includes(course.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-600 text-transparent'}`}>
+                                                    <CheckSquare size={16} strokeWidth={3} />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="flex items-center justify-between gap-4 pt-3 border-t border-slate-700">
-                                            <span className="px-2 py-1 rounded-md bg-slate-900 text-[10px] font-bold text-slate-300 uppercase tracking-widest">Batch {course.batch}</span>
-                                            <div className="font-black text-lg text-white">{formatRupiah(course.harga)}</div>
-                                        </div>
-                                    </div>
-                                ))
+                                            <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-700/50">
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Batch {course.batch}</span>
+                                                <span className="font-black text-white">{formatRupiah(course.harga)}</span>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </div>
                             )}
                         </div>
 
+                        {/* Payment Section - Only shows if course selected */}
                         {data.course_ids.length > 0 && (
-                            <div className="shrink-0 space-y-6 pt-10 mt-10 border-t border-slate-800">
-                                <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Instruksi Pembayaran</h3>
-                                
-                                <div className="p-6 rounded-2xl bg-white text-slate-900 flex justify-between items-center shadow-sm">
-                                    <div className="flex-1">
-                                        <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Transfer</p>
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="relative z-10 pt-6 mt-6 border-t border-slate-800 space-y-6">
+                                <div className="p-5 rounded-2xl bg-white text-slate-900 flex justify-between items-center shadow-xl">
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Total Bayar</p>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-2xl font-black text-blue-600 leading-none">{formatRupiah(totalPrice)}</p>
-                                            <button 
-                                                type="button"
-                                                onClick={() => handleCopy(totalPrice)}
-                                                className="p-1.5 hover:bg-slate-100 rounded-md transition-colors text-slate-400 hover:text-blue-600"
-                                                title="Salin nominal"
-                                            >
+                                            <p className="text-2xl font-black text-blue-600">{formatRupiah(totalPrice)}</p>
+                                            <button type="button" onClick={() => handleCopy(totalPrice)} className="p-1.5 hover:bg-slate-100 rounded-md text-slate-400 hover:text-blue-600 transition-colors">
                                                 <Copy size={14} />
                                             </button>
                                         </div>
@@ -135,102 +153,64 @@ export default function Register({ courses }) {
                                 </div>
 
                                 <div className="space-y-4">
-                                    <label className="block text-sm font-semibold text-slate-300 mb-1">Pilih Metode Pembayaran:</label>
-                                    <div className="relative group">
-    {/* Label kecil di atas dropdown untuk kejelasan */}
-    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">
-        Pilih Metode Pembayaran
-    </label>
-    
-    <div className="relative">
-        <select 
-            value={selectedMethod}
-            onChange={(e) => setSelectedMethod(e.target.value)}
-            className="w-full bg-slate-800/50 border-2 border-slate-700 text-white rounded-2xl py-3.5 pl-5 pr-12 text-sm font-bold appearance-none cursor-pointer transition-all duration-200 hover:border-slate-500 hover:bg-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none sm:text-base"
-        >
-            <option value="" className="bg-slate-900">-- Pilih Metode Transfer --</option>
-            {app_settings.bank1_active === '1' && (
-                <option value="bank1" className="bg-slate-900">{app_settings.bank1_name}</option>
-            )}
-            {app_settings.bank2_active === '1' && (
-                <option value="bank2" className="bg-slate-900">{app_settings.bank2_name}</option>
-            )}
-            {app_settings.qris_active === '1' && (
-                <option value="qris" className="bg-slate-900">QRIS </option>
-            )}
-        </select>
-        
-        {/* Icon Chevron yang lebih responsif posisinya */}
-        <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-400 group-hover:text-white transition-colors">
-            <ChevronDown size={20} strokeWidth={2.5} />
-        </div>
-    </div>
-
-    {/* Info tambahan tipis di bawah dropdown */}
-    {!selectedMethod && (
-        <p className="mt-2 ml-1 text-[11px] text-slate-500 italic">
-            *Pilih salah satu untuk melihat nomor rekening
-        </p>
-    )}
-</div>
+                                    <div className="relative">
+                                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 ml-1">Metode Pembayaran</label>
+                                        <div className="relative">
+                                            <select 
+                                                value={selectedMethod}
+                                                onChange={(e) => setSelectedMethod(e.target.value)}
+                                                className="w-full bg-slate-800/50 border-2 border-slate-700 text-white rounded-2xl py-3.5 pl-5 pr-12 text-sm font-bold appearance-none cursor-pointer focus:border-blue-500 outline-none transition-all"
+                                            >
+                                                <option value="">-- Pilih Rekening --</option>
+                                                {app_settings.bank1_active === '1' && <option value="bank1">{app_settings.bank1_name}</option>}
+                                                {app_settings.bank2_active === '1' && <option value="bank2">{app_settings.bank2_name}</option>}
+                                                {app_settings.qris_active === '1' && <option value="qris">QRIS (Otomatis)</option>}
+                                            </select>
+                                            <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none text-slate-500">
+                                                <ChevronDown size={20} />
+                                            </div>
+                                        </div>
+                                    </div>
 
                                     {(selectedMethod === 'bank1' || selectedMethod === 'bank2') && (
-                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-800 border border-blue-500/50 flex flex-col gap-3">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 bg-slate-900 rounded-lg text-blue-400"><Receipt size={18}/></div>
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                            {selectedMethod === 'bank1' ? app_settings.bank1_name : app_settings.bank2_name}
-                                                        </p>
-                                                        <p className="text-base font-black text-white tracking-wider">
-                                                            {selectedMethod === 'bank1' ? app_settings.bank1_number : app_settings.bank2_number}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <button 
-                                                    type="button"
-                                                    onClick={() => handleCopy(selectedMethod === 'bank1' ? app_settings.bank1_number : app_settings.bank2_number)}
-                                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold text-[10px] transition-all ${copied ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
-                                                >
-                                                    {copied ? <><Check size={12}/> Tersalin!</> : <><Copy size={12}/> Salin No. Rek</>}
-                                                </button>
+                                        <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="p-4 rounded-2xl bg-slate-800 border border-blue-500/30">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase">{selectedMethod === 'bank1' ? app_settings.bank1_name : app_settings.bank2_name}</span>
+                                                <button onClick={() => handleCopy(selectedMethod === 'bank1' ? app_settings.bank1_number : app_settings.bank2_number)} className="text-[10px] font-bold text-blue-400 hover:text-blue-300">Salin</button>
                                             </div>
-                                            <p className="text-[11px] font-medium text-slate-400 border-t border-slate-700 pt-2">
-                                                Atas Nama: <span className="text-white uppercase">{selectedMethod === 'bank1' ? app_settings.bank1_owner : app_settings.bank2_owner}</span>
-                                            </p>
+                                            <p className="text-lg font-black text-white tracking-widest mb-1">{selectedMethod === 'bank1' ? app_settings.bank1_number : app_settings.bank2_number}</p>
+                                            <p className="text-[11px] text-slate-400">A.N: <span className="text-white uppercase">{selectedMethod === 'bank1' ? app_settings.bank1_owner : app_settings.bank2_owner}</span></p>
                                         </motion.div>
                                     )}
 
                                     {selectedMethod === 'qris' && app_settings.qris_path && (
-                                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-4 rounded-2xl bg-white flex flex-col items-center gap-3">
-                                            <img src={`/storage/${app_settings.qris_path}`} alt="QRIS" className="w-full max-w-[180px] h-auto" />
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase text-center italic">Scan QRIS melalui M-Banking / E-Wallet</p>
+                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 rounded-2xl bg-white flex flex-col items-center">
+                                            <img src={`/storage/${app_settings.qris_path}`} alt="QRIS" className="w-32 h-auto mb-2" />
+                                            <p className="text-[10px] font-bold text-slate-400">SCAN UNTUK BAYAR</p>
                                         </motion.div>
                                     )}
-                                </div>
 
-                                {selectedMethod && (
-                                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                        <label className="block text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                                            <Upload size={16} className="text-blue-400"/> Unggah Bukti Transfer (Wajib)
-                                        </label>
-                                        <div className="relative w-full h-32 rounded-2xl border-2 border-dashed border-slate-600 bg-slate-800/50 flex flex-col items-center justify-center overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer">
-                                            {preview ? (
-                                                <img src={preview} alt="Preview Bukti" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <div className="text-center p-4">
-                                                    <Upload className="mx-auto text-slate-400 mb-2 group-hover:text-blue-400 transition-colors" size={24} />
-                                                    <p className="text-xs font-medium text-slate-400">Klik untuk pilih foto struk</p>
-                                                </div>
-                                            )}
-                                            <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
+                                    {selectedMethod && (
+                                        <div className="space-y-3">
+                                            <label className="block text-xs font-bold text-white flex items-center gap-2">
+                                                <Upload size={14} className="text-blue-400"/> Unggah Bukti Transfer
+                                            </label>
+                                            <div className="relative w-full h-28 rounded-2xl border-2 border-dashed border-slate-700 bg-slate-800/30 flex flex-col items-center justify-center overflow-hidden group hover:border-blue-500 transition-all cursor-pointer">
+                                                {preview ? (
+                                                    <img src={preview} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="text-center">
+                                                        <Upload className="mx-auto text-slate-600 mb-1" size={20} />
+                                                        <p className="text-[10px] text-slate-500">Klik untuk upload struk</p>
+                                                    </div>
+                                                )}
+                                                <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer" required />
+                                            </div>
                                         </div>
-                                    </motion.div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            </motion.div>
                         )}
-
 <div className="mt-auto pt-10 text-center border-t border-slate-800/50 mt-8">
     <p className="text-xs font-medium text-slate-400 mb-3">Butuh bantuan pendaftaran?</p>
     
@@ -254,108 +234,91 @@ export default function Register({ courses }) {
 </div>
                     </div>
 
-                    <div className="w-full md:w-[58%] p-8 sm:p-12 lg:p-16 flex flex-col bg-white overflow-visible">
-                        <div className="mb-10 shrink-0">
-                            <h3 className="text-3xl font-black text-slate-900 mb-2 leading-tight">Lengkapi<br/>Identitas Diri</h3>
-                            <p className="text-slate-500 text-sm font-medium">Data ini digunakan untuk keperluan administrasi kelas dan pencetakan e-sertifikat Anda.</p>
+                    {/* RIGHT COLUMN: User Identity Form */}
+                    <div className="w-full md:w-[55%] p-8 sm:p-12 bg-white">
+                        <div className="mb-10">
+                            <h3 className="text-3xl font-black text-slate-900 mb-2">Identitas Diri</h3>
+                            <p className="text-slate-500 text-sm">Pastikan data sesuai untuk keperluan e-sertifikat.</p>
                         </div>
 
-                        <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5">
+                        <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div className="sm:col-span-2">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Nama Lengkap (Sesuai KTP)</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nama Lengkap</label>
                                 <div className="relative">
-                                    <User size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                    <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-medium outline-none transition-colors" placeholder="Contoh: Ahmad Fulan" required />
+                                    <User size={18} className="absolute top-3.5 left-4 text-slate-400" />
+                                    <input type="text" value={data.name} onChange={e => setData('name', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 py-3.5 text-sm font-bold outline-none transition-all" placeholder="Nama Lengkap Sesuai KTP" required />
                                 </div>
-                                {errors.name && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.name}</p>}
+                                {errors.name && <p className="text-rose-500 text-[10px] font-bold mt-1 uppercase">{errors.name}</p>}
                             </div>
 
                             <div className="sm:col-span-2">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email Aktif</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Email Aktif</label>
                                 <div className="relative">
-                                    <Mail size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                    <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-medium outline-none transition-colors" placeholder="email@anda.com" required />
+                                    <Mail size={18} className="absolute top-3.5 left-4 text-slate-400" />
+                                    <input type="email" value={data.email} onChange={e => setData('email', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 py-3.5 text-sm font-bold outline-none transition-all" placeholder="email@anda.com" required />
                                 </div>
-                                {errors.email && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.email}</p>}
+                                {errors.email && <p className="text-rose-500 text-[10px] font-bold mt-1 uppercase">{errors.email}</p>}
                             </div>
 
                             <div className="sm:col-span-2">
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Alamat Domisili Lengkap</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Alamat Domisili</label>
                                 <div className="relative">
-                                    <MapPin size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                    <textarea value={data.alamat} onChange={e => setData('alamat', e.target.value)} rows="3" className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-medium outline-none transition-colors resize-none" placeholder="Nama Jalan, No. Rumah, RT/RW, Kota/Kabupaten..." required></textarea>
+                                    <MapPin size={18} className="absolute top-3.5 left-4 text-slate-400" />
+                                    <textarea value={data.alamat} onChange={e => setData('alamat', e.target.value)} rows="3" className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 py-3.5 text-sm font-bold outline-none transition-all resize-none" placeholder="Alamat Lengkap..." required></textarea>
                                 </div>
-                                {errors.alamat && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.alamat}</p>}
                             </div>
 
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Pekerjaan</label>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pekerjaan</label>
                                 <div className="relative">
-                                    <Briefcase size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                    <input type="text" value={data.pekerjaan} onChange={e => setData('pekerjaan', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-medium outline-none transition-colors" placeholder="Cth: Karyawan Swasta" required />
+                                    <Briefcase size={18} className="absolute top-3.5 left-4 text-slate-400" />
+                                    <input type="text" value={data.pekerjaan} onChange={e => setData('pekerjaan', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 py-3.5 text-sm font-bold outline-none transition-all" placeholder="Cth: Guru" required />
                                 </div>
-                                {errors.pekerjaan && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.pekerjaan}</p>}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Umur</label>
-                                    <div className="relative">
-                                        <CalendarDays size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                        <input type="number" value={data.umur} onChange={e => setData('umur', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-medium outline-none transition-colors" placeholder="25" required />
-                                    </div>
-                                    {errors.umur && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.umur}</p>}
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Umur</label>
+                                   <input type="number" value={data.umur} onChange={e => setData('umur', e.target.value ? parseInt(e.target.value) : '')} className="w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold text-center outline-none transition-all" placeholder="25" required />
                                 </div>
                                 <div>
-                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Status Kawin</label>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Status</label>
+                                    <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all cursor-pointer px-3" required>
+                                        <option value="" disabled>Pilih...</option>
+                                        <option value="menikah">Menikah</option>
+                                        <option value="belum">Belum</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5 mt-2">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Password</label>
                                     <div className="relative">
-                                        <Heart size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                        <select value={data.status} onChange={e => setData('status', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-semibold appearance-none cursor-pointer outline-none transition-colors" required>
-                                            <option value="" disabled>Pilih...</option>
-                                            <option value="menikah">Menikah</option>
-                                            <option value="belum">Belum Menikah</option>
-                                        </select>
+                                        <Lock size={18} className="absolute top-3.5 left-4 text-slate-400" />
+                                        <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all" placeholder="••••••••" required />
                                     </div>
-                                    {errors.status && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.status}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Konfirmasi</label>
+                                    <div className="relative">
+                                        <CheckCircle2 size={18} className="absolute top-3.5 left-4 text-slate-400" />
+                                        <input type="password" value={data.password_confirmation} onChange={e => setData('password_confirmation', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all" placeholder="••••••••" required />
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="sm:col-span-2 border-t border-slate-100 my-2"></div>
-
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password Akun</label>
-                                <div className="relative">
-                                    <Lock size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                    <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-medium outline-none transition-colors" placeholder="Minimal 8 karakter" required />
-                                </div>
-                                {errors.password && <p className="text-rose-500 text-xs font-semibold mt-1.5">{errors.password}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Konfirmasi Password</label>
-                                <div className="relative">
-                                    <Lock size={18} className="absolute top-[12px] left-4 text-slate-400 pointer-events-none" />
-                                    <input type="password" value={data.password_confirmation} onChange={e => setData('password_confirmation', e.target.value)} className="pl-11 w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500 py-3 text-sm font-medium outline-none transition-colors" placeholder="Ketik ulang password" required />
-                                </div>
-                            </div>
-
-                            <div className="sm:col-span-2 mt-6 pt-6 border-t border-slate-100">
-                                <button 
-                                    disabled={processing || data.course_ids.length === 0 || !data.bukti_pembayaran} 
-                                    className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3.5 px-6 rounded-xl font-bold text-sm hover:bg-blue-600 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                            <div className="sm:col-span-2 pt-6">
+                                <button
+                                    type="submit"
+                                    disabled={processing || data.course_ids.length === 0 || !selectedMethod || !data.bukti_pembayaran}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
                                 >
-                                    {processing ? (
-                                        <> <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Sedang Memproses... </>
-                                    ) : (
-                                        <>Daftar & Kirim Pembayaran <UserPlus size={18} /></>
+                                    {processing ? 'Memproses...' : (
+                                        <><span>Daftar Sekarang</span> <ArrowRight size={18} /></>
                                     )}
                                 </button>
-                                <p className="text-center text-sm font-medium text-slate-500 mt-5">
-                                    Sudah punya akun?{' '}
-                                    <Link href={route('login')} className="font-bold text-blue-600 hover:text-blue-700 transition-colors">
-                                        Masuk di sini
-                                    </Link>
-                                </p>
+                                {data.course_ids.length === 0 && <p className="text-center text-[10px] font-bold text-rose-500 mt-4">Silakan pilih minimal satu kelas di kolom kiri</p>}
                             </div>
                         </form>
                     </div>

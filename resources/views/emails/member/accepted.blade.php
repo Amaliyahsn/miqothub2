@@ -1,16 +1,26 @@
 <x-mail::message>
-# Alhamdulillah, Halo {{ $member->name }}!
+# Akses Kelas Berhasil Diaktifkan! 
 
-Pembayaran Anda untuk kelas **{{ $course->nama }}** telah kami verifikasi. Akun Anda sekarang sudah aktif untuk mengakses materi tersebut.
+Alhamdulillah, Halo **{{ $member->name }}**,
 
-Silakan klik tombol di bawah untuk mulai mengakses modul bimbingan Anda.
+Kabar baik! Pembayaran Anda untuk kelas **{{ $course->nama }}** telah kami verifikasi secara manual. Saat ini, akses belajar Anda telah terbuka sepenuhnya.
 
-<x-mail::button :url="url('/dashboard')">
+<x-mail::panel>
+**Informasi Kelas Anda:**
+- **Nama Program:** {{ $course->nama }}
+{{-- Gunakan pengecekan jika properti batch mungkin tidak ada --}}
+- **Batch:** {{ $course->batch ?? 'Umum' }} 
+- **Status Akun:** Aktif (Siap Belajar)
+</x-mail::panel>
+
+Ayo mulai langkah pertama Anda sekarang dengan mengeklik tombol di bawah ini:
+
+<x-mail::button :url="route('dashboard')" color="success">
 Mulai Belajar Sekarang
 </x-mail::button>
 
-Semoga ilmunya berkah dan dilancarkan ibadahnya.
+Semoga proses belajarnya berjalan lancar, ilmunya bermanfaat, dan dilancarkan niat ibadahnya. Jika menemui kendala akses, silakan hubungi tim dukungan kami melalui WhatsApp atau balas email ini.
 
 Salam hangat,<br>
-**Tim MiqotHub**
+**Tim {{ config('app.name') }}**
 </x-mail::message>

@@ -40,26 +40,31 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'alamat' => 'required|string',
-            'pekerjaan' => 'required|string|max:255',
-            'status' => 'required|in:menikah,belum',
-            
-            // UBAH JADI ARRAY:
-            'course_ids' => 'required|array|min:1', 
-            'course_ids.*' => 'exists:courses,id',
-            'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-        ]);
+    'name' => 'required|string|max:255',
+    'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+    'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    'alamat' => 'required|string',
+    'pekerjaan' => 'required|string|max:255',
+    'status' => 'required|in:menikah,belum',
+    'umur' => 'required|integer|min:1|max:120',
+
+    'course_ids' => 'required|array|min:1', 
+    'course_ids.*' => 'exists:courses,id',
+    'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+]);
 
         DB::transaction(function () use ($request) {
             $user = User::create([
-                'name' => $request->name, 'email' => $request->email,
-                'password' => Hash::make($request->password), 'role' => 'member',
-                'alamat' => $request->alamat, 'pekerjaan' => $request->pekerjaan,
-                'status' => $request->status, 'status_akun' => 'pending', 
-            ]);
+    'name' => $request->name, 
+    'email' => $request->email,
+    'password' => Hash::make($request->password), 
+    'role' => 'member',
+    'alamat' => $request->alamat, 
+    'pekerjaan' => $request->pekerjaan,
+    'status' => $request->status, 
+    'umur' => $request->umur, // 🔥 TAMBAHAN DI SINI
+    'status_akun' => 'pending', 
+]);
 
             $buktiPath = $request->file('bukti_pembayaran')->store('bukti_transfer', 'public');
 
