@@ -50,6 +50,8 @@ export default function Index({ auth, members = [], allCourses = [] }) {
             if (activeTab === 'aktif') return m.status_akun === 'aktif';
             if (activeTab === 'registrasi') return m.status_akun === 'pending';
             if (activeTab === 'pembelian') return m.status_akun === 'aktif' && hasPendingOrRejected;
+            // PERBAIKAN: Menambahkan kondisi untuk tab ditolak (berdasarkan status akun suspen dari Controller)
+            if (activeTab === 'ditolak') return m.status_akun === 'suspen'; 
             return false;
         });
 
@@ -65,7 +67,9 @@ export default function Index({ auth, members = [], allCourses = [] }) {
     const counts = useMemo(() => ({
         aktif: members.filter(m => m.status_akun === 'aktif').length,
         registrasi: members.filter(m => m.status_akun === 'pending').length,
-        pembelian: members.filter(m => m.status_akun === 'aktif' && m.transactions?.some(t => t.status === 'pending' || t.status === 'rejected')).length
+        pembelian: members.filter(m => m.status_akun === 'aktif' && m.transactions?.some(t => t.status === 'pending' || t.status === 'rejected')).length,
+        // PERBAIKAN: Hitung jumlah data yang ditolak
+        ditolak: members.filter(m => m.status_akun === 'suspen').length 
     }), [members]);
 
     const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { 
@@ -75,11 +79,15 @@ export default function Index({ auth, members = [], allCourses = [] }) {
     const triggerConfirm = (type, member) => {
         let config = {};
         const isNewAccount = member.status_akun === 'pending';
+        const isSuspended = member.status_akun === 'suspen'; // Mendeteksi akun yang ditolak
 
         if (type === 'verify') {
             config = { 
-                title: isNewAccount ? 'Terima Pendaftaran' : 'Verifikasi Pembayaran', 
-                message: `Konfirmasi pembayaran untuk ${member.name}? Sistem akan mengirimkan email notifikasi otomatis.`, 
+                // PERBAIKAN: Label judul menyesuaikan apakah akun sedang ditolak (unreject) atau pending
+                title: isSuspended ? 'Terima Kembali (Unreject)' : (isNewAccount ? 'Terima Pendaftaran' : 'Verifikasi Pembayaran'), 
+                message: isSuspended 
+                    ? `Batalkan penolakan dan konfirmasi ulang pengajuan dari ${member.name}? Akun akan diaktifkan kembali.` 
+                    : `Konfirmasi pembayaran untuk ${member.name}? Sistem akan mengirimkan email notifikasi otomatis.`, 
                 icon: <CheckCircle size={32} />, color: 'emerald' 
             };
         } else if (type === 'reject') {
@@ -143,7 +151,9 @@ export default function Index({ auth, members = [], allCourses = [] }) {
                     {[
                         { id: 'aktif', label: 'Member Aktif', icon: <UserCheck size={18} />, count: counts.aktif, color: 'text-blue-900' },
                         { id: 'registrasi', label: 'Registrasi Baru', icon: <UserPlus size={18} />, count: counts.registrasi, color: 'text-violet-900' },
-                        { id: 'pembelian', label: 'Pembelian Paket', icon: <ShoppingCart size={18} />, count: counts.pembelian, color: 'text-sky-900' }
+                        { id: 'pembelian', label: 'Pembelian Paket', icon: <ShoppingCart size={18} />, count: counts.pembelian, color: 'text-sky-900' },
+                        // PERBAIKAN: Menambahkan Tab Ditolak 
+                        { id: 'ditolak', label: 'Ditolak', icon: <ShieldAlert size={18} />, count: counts.ditolak, color: 'text-rose-900' }
                     ].map((tab) => (
                         <button 
                             key={tab.id}
@@ -270,12 +280,26 @@ export default function Index({ auth, members = [], allCourses = [] }) {
                                                         <button onClick={() => setEditModal({ isOpen: true, member })} className="p-2 hover:bg-blue-50 rounded-lg text-slate-400 hover:text-blue-600"><Edit size={17}/></button>
                                                     </>
                                                 ) : (
-                                                    pendingTrx?.status !== 'rejected' && (
-                                                        <>
-                                                            <button onClick={() => triggerConfirm('verify', member)} className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600"><CheckCircle size={17}/></button>
-                                                            <button onClick={() => triggerConfirm('reject', member)} className="p-2 hover:bg-amber-50 rounded-lg text-amber-600"><XCircle size={17}/></button>
-                                                        </>
-                                                    )
+                                                    // PERBAIKAN: Tombol Verify (centang) akan selalu muncul (untuk konfirmasi atau "Unreject").
+                                                    // Sedangkan tombol Reject (silang) otomatis sembunyi jika statusnya memang sudah ditolak.
+                                                    <>
+                                                        <button 
+                                                            onClick={() => triggerConfirm('verify', member)} 
+                                                            className="p-2 hover:bg-emerald-50 rounded-lg text-emerald-600"
+                                                            title={member.status_akun === 'suspen' ? "Unreject (Terima Kembali)" : "Verifikasi"}
+                                                        >
+                                                            <CheckCircle size={17}/>
+                                                        </button>
+                                                        {pendingTrx?.status !== 'rejected' && (
+                                                            <button 
+                                                                onClick={() => triggerConfirm('reject', member)} 
+                                                                className="p-2 hover:bg-amber-50 rounded-lg text-amber-600"
+                                                                title="Tolak"
+                                                            >
+                                                                <XCircle size={17}/>
+                                                            </button>
+                                                        )}
+                                                    </>
                                                 )}
                                                 <button onClick={() => triggerConfirm('delete', member)} className="p-2 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600"><Trash2 size={17}/></button>
                                             </div>
@@ -325,7 +349,7 @@ export default function Index({ auth, members = [], allCourses = [] }) {
                 {confirmModal.isOpen && confirmModal.type === 'verify' && (
                     <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Item Transaksi:</p>
-                        {members.find(m => m.id === confirmModal.id)?.transactions?.find(t => t.status === 'pending')?.courses?.map(c => (
+                        {members.find(m => m.id === confirmModal.id)?.transactions?.find(t => t.status === 'pending' || t.status === 'rejected')?.courses?.map(c => (
                             <div key={c.id} className="text-sm font-bold text-blue-900 flex justify-between">
                                 <span>{c.nama}</span>
                                 <span>{formatRupiah(c.harga)}</span>

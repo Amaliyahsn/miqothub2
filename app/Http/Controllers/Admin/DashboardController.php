@@ -14,19 +14,27 @@ class DashboardController extends Controller
     public function index()
     {
         // 1. Hitung Data Statistik
-        // Hanya hitung user yang memiliki role 'member'
-        $totalMember = User::where('role', 'member')->count(); 
+        // PERBAIKAN: Hanya hitung user role 'member' yang status akunnya 'aktif'
+        $totalMember = User::where('role', 'member')
+            ->where('status_akun', 'aktif')
+            ->count(); 
         
-        $modulAktif = Course::count(); 
+        // PERBAIKAN LOGIKA KELAS AKTIF:
+        // Hitung kelas yang statusnya 'onsale' DAN (tanggal_selesai masih kosong ATAU belum lewat hari ini)
+        $modulAktif = Course::where('status', 'onsale')
+            ->where(function($query) {
+                $query->whereNull('tanggal_selesai')
+                      ->orWhereDate('tanggal_selesai', '>=', now());
+            })->count(); 
+
         $lulusUjian = ExerciseScore::count(); 
         
         $totalUjian = ExerciseScore::count();
         $tingkatKelulusan = $totalUjian > 0 ? round(($lulusUjian / $totalUjian) * 100) : 0;
 
-        // 2. Mengambil 5 Member Terbaru (Kecualikan Admin)
-        $recentMembers = User::where('role', 'member') // Filter hanya role member
+        // 2. Mengambil Semua Member (Kecualikan Admin) untuk fitur scroll di React
+        $recentMembers = User::where('role', 'member') 
             ->latest()
-            ->take(5)
             ->get()
             ->map(function ($user) {
                 return [

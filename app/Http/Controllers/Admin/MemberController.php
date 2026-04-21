@@ -84,8 +84,10 @@ class MemberController extends Controller
     {
         $member->update(['status_akun' => 'aktif']);
 
+        // PERBAIKAN: Menambahkan 'rejected' ke array pencarian.
+        // Ini memungkinkan proses "Unreject" dengan cara memverifikasi ulang transaksi yang sudah ditolak.
         $transaction = Transaction::where('user_id', $member->id)
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'rejected']) 
             ->with('courses')
             ->first();
 
@@ -121,7 +123,7 @@ class MemberController extends Controller
             $transaction->update(['status' => 'rejected']);
 
             // Jika Mailable penolakan sudah dibuat, aktifkan baris di bawah:
-            Mail::to($member->email)->send(new MemberRegistrationRejected($member, $courseNames));
+            // Mail::to($member->email)->send(new MemberRegistrationRejected($member, $courseNames));
         }
 
         return back()->with('success', 'Pendaftaran telah ditolak dan akun ditangguhkan.');

@@ -2,50 +2,37 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+// Import class untuk Reset Password
+use Illuminate\Auth\Notifications\ResetPassword as ResetPasswordNotification;
+use Illuminate\Notifications\Messages\MailMessage;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
         'role',
-        'status_akun', // Pastikan ini ada
+        'status_akun',
         'foto_profile',
         'alamat',
         'pekerjaan',
-        'umur',        // <--- Tambahkan ini
+        'umur',
         'status',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -54,17 +41,43 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Override: Mengirim notifikasi reset password kustom
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        // Membuat URL reset password sesuai route bawaan Laravel/Breeze
+        $url = url(route('password.reset', [
+            'token' => $token,
+            'email' => $this->getEmailForPasswordReset(),
+        ], false));
+
+        // Memberitahu Laravel untuk menggunakan file blade kustom
+        $this->notify(new class($url) extends ResetPasswordNotification {
+            protected $url;
+            public function __construct($url) { $this->url = $url; }
+
+            public function toMail($notifiable)
+            {
+                return (new MailMessage)
+                    ->subject('Reset Password Notification - MiqotHub')
+                    ->markdown('emails.auth.reset_password', ['url' => $this->url]);
+            }
+        });
+    }
+
+    // Relationships
     public function transactions()
     {
         return $this->hasMany(Transaction::class);
     }
 
-    /**
-     * Helper: Mendapatkan semua kursus yang dimiliki user (yang sudah lunas/terverifikasi)
-     */
+    public function exerciseScores() {
+        return $this->hasMany(ExerciseScore::class);
+    }
 
     /**
-     * Helper: Mendapatkan semua kursus yang dimiliki user (yang sudah lunas/terverifikasi)
+     * Helper: Mendapatkan kursus yang sudah diverifikasi/lunas
      */
     public function courses()
     {
@@ -73,10 +86,6 @@ class User extends Authenticatable
             ->where('transactions.user_id', $this->id)
             ->where('transactions.status', 'verified')
             ->select('courses.*')
-            ->distinct(); // Pakai distinct agar kelas tidak dobel kalau misal ada transaksi berulang
-    }
-
-    public function exerciseScores() {
-        return $this->hasMany(ExerciseScore::class);
+            ->distinct();
     }
 }
