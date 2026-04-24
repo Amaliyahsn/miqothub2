@@ -286,7 +286,7 @@ export default function Register({ courses }) {
                                     <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all cursor-pointer px-3" required>
                                         <option value="" disabled>Pilih...</option>
                                         <option value="menikah">Menikah</option>
-                                        <option value="belum">Belum</option>
+                                        <option value="belum">Belum Menikah</option>
                                     </select>
                                 </div>
                             </div>
@@ -308,18 +308,37 @@ export default function Register({ courses }) {
                                 </div>
                             </div>
 
-                            <div className="sm:col-span-2 pt-6">
-                                <button
-                                    type="submit"
-                                    disabled={processing || data.course_ids.length === 0 || !selectedMethod || !data.bukti_pembayaran}
-                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
-                                >
-                                    {processing ? 'Memproses...' : (
-                                        <><span>Daftar Sekarang</span> <ArrowRight size={18} /></>
-                                    )}
-                                </button>
-                                {data.course_ids.length === 0 && <p className="text-center text-[10px] font-bold text-rose-500 mt-4">Silakan pilih minimal satu kelas di kolom kiri</p>}
-                            </div>
+                           <div className="sm:col-span-2 pt-6">
+    <button
+        type="submit"
+        disabled={processing || data.course_ids.length === 0 || !selectedMethod || !data.bukti_pembayaran}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 disabled:text-slate-400 text-white py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
+    >
+        {processing ? 'Memproses...' : (
+            <><span>Daftar Sekarang</span> <ArrowRight size={18} /></>
+        )}
+    </button>
+
+    {/* Pesan error jika kelas belum dipilih */}
+    {data.course_ids.length === 0 && (
+        <p className="text-center text-[10px] font-bold text-rose-500 mt-4">
+            Silakan pilih minimal satu kelas di kolom kiri
+        </p>
+    )}
+
+    {/* Link ke halaman Login */}
+    <div className="mt-6 text-center">
+        <p className="text-sm text-slate-500">
+            Sudah punya akun?{' '}
+            <Link
+                href={route('login')}
+                className="font-bold text-blue-600 hover:text-blue-700 transition-colors"
+            >
+                Login
+            </Link>
+        </p>
+    </div>
+</div>
                         </form>
                     </div>
                 </motion.div>

@@ -100,7 +100,7 @@ class RegisteredUserController extends Controller
             ];
 
             // Mengirim email ke email Admin
-            Mail::to('amaliyahsyahidatunnimah27@gmail.com')->send(new AdminPaymentNotification($dataEmail));
+            Mail::to('miqothub@gmail.com')->send(new AdminPaymentNotification($dataEmail));
             // ==========================================
 
             event(new Registered($user));
