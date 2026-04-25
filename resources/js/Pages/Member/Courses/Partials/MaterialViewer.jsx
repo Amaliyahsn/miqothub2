@@ -39,7 +39,8 @@ export default function MaterialViewer({ activeMaterial }) {
     }
 
     return (
-        <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col no-select">
+        /* ✅ BAGIAN LUAR SEKARANG BEBAS (Bisa Klik Kanan, Klik Kiri, Inspect) */
+        <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
             
             {/* 1. VIDEO SECTION */}
             {activeMaterial.tipe === 'video' && (
@@ -60,12 +61,12 @@ export default function MaterialViewer({ activeMaterial }) {
                 </div>
             )}
 
-            {/* 2. PDF SECTION (SECURE HD CANVAS) */}
+            {/* 2. PDF SECTION (Hanya di sini yang dikunci) */}
             {activeMaterial.tipe === 'pdf' && (
                 <SecurePDFViewer materialId={activeMaterial.id} />
             )}
 
-{/* 3. PERTEMUAN SECTION */}
+            {/* 3. PERTEMUAN SECTION */}
             {activeMaterial.tipe === 'pertemuan' && (
                 <div className="bg-gradient-to-br from-blue-50/50 via-white to-slate-50 p-10 md:p-20 flex flex-col items-center text-center border-b border-slate-200 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-100/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
@@ -85,10 +86,7 @@ export default function MaterialViewer({ activeMaterial }) {
                         </div>
                     </div>
 
-                    {/* ✅ KOTAK INFORMASI & LINK (Diperbarui) */}
                     <div className="w-full max-w-md relative z-10 flex flex-col gap-4">
-                        
-                        {/* KOTAK PASSCODE */}
                         {activeMaterial.password_meet && (
                             <div className="p-4 bg-blue-950 border border-blue-900 rounded-2xl shadow-lg flex items-center justify-between px-6">
                                 <span className="text-xs font-black text-blue-400 uppercase tracking-widest flex items-center gap-2">
@@ -100,7 +98,6 @@ export default function MaterialViewer({ activeMaterial }) {
                             </div>
                         )}
 
-                        {/* KOTAK COPY LINK EXTERNAL */}
                         <div className="p-2 bg-white border border-slate-200 shadow-sm rounded-2xl flex items-center justify-between gap-3">
                             <div className="flex-1 truncate pl-4 text-left">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Tautan Ruang Virtual</p>
@@ -119,7 +116,6 @@ export default function MaterialViewer({ activeMaterial }) {
                             </button>
                         </div>
 
-                        {/* TOMBOL BUKA LANGSUNG DENGAN AUTO-HTTPS */}
                         <a 
                             href={activeMaterial.link_meet?.startsWith('http') ? activeMaterial.link_meet : `https://${activeMaterial.link_meet}`} 
                             target="_blank" 
@@ -152,7 +148,7 @@ export default function MaterialViewer({ activeMaterial }) {
             )}
 
             {/* 5. DESCRIPTION SECTION */}
-            <div className="p-8 lg:p-10 bg-white no-select border-t border-slate-100">
+            <div className="p-8 lg:p-10 bg-white border-t border-slate-100">
                 <div className="flex items-center gap-3 mb-5">
                     <span className="px-3 py-1.5 bg-blue-50 text-blue-700 text-[10px] font-black uppercase tracking-widest rounded-lg border border-blue-100/50">Materi {activeMaterial.urutan}</span>
                     {activeMaterial.durasi && <span className="flex items-center gap-1.5 text-xs font-bold text-slate-400"><Clock size={14} strokeWidth={2.5}/> {activeMaterial.durasi}</span>}
@@ -160,22 +156,21 @@ export default function MaterialViewer({ activeMaterial }) {
                 <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-6 leading-snug tracking-tight">{activeMaterial.judul}</h2>
                 <div className="w-12 h-1 bg-blue-600 rounded-full mb-8"></div>
                 {activeMaterial.deskripsi ? (
-                    <div className="prose prose-slate max-w-none text-slate-600 leading-loose font-medium no-select" dangerouslySetInnerHTML={{ __html: activeMaterial.deskripsi }} />
+                    <div className="prose prose-slate max-w-none text-slate-600 leading-loose font-medium" dangerouslySetInnerHTML={{ __html: activeMaterial.deskripsi }} />
                 ) : (
                     <p className="text-slate-400 italic font-medium">Tidak ada deskripsi tambahan untuk materi ini.</p>
                 )}
             </div>
 
-            {/* CSS PROTECTIONS */}
+            {/* CSS PROTECTIONS (Hanya Cetak) */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print { body { display: none !important; } }
-                .no-select { user-select: none; -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; }
             `}} />
         </div>
     );
 }
 
-// ✅ SUB-KOMPONEN SECURE HD VIEWER
+// ✅ SUB-KOMPONEN SECURE PDF BOX
 function SecurePDFViewer({ materialId }) {
     const containerRef = useRef();
     const [loading, setLoading] = useState(true);
@@ -191,8 +186,6 @@ function SecurePDFViewer({ materialId }) {
 
                 for (let i = 1; i <= pdf.numPages; i++) {
                     const page = await pdf.getPage(i);
-                    
-                    // ✅ SKALA 2.0 UNTUK KUALITAS HD (TAJAM)
                     const viewport = page.getViewport({ scale: 2.0 }); 
 
                     const canvas = document.createElement('canvas');
@@ -220,7 +213,7 @@ function SecurePDFViewer({ materialId }) {
 
         renderPDF();
 
-        // 🔒 Keyboard Protection
+        // 🔒 Keyboard Protection (Hanya berlaku saat komponen ini dipasang)
         const handleKey = (e) => {
             if (e.ctrlKey && ['c','s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
         };
@@ -229,7 +222,17 @@ function SecurePDFViewer({ materialId }) {
     }, [materialId]);
 
     return (
-        <div className="bg-slate-50 flex flex-col border-b border-slate-200 relative select-none" onContextMenu={(e) => e.preventDefault()}>
+        /* ✅ PROTEKSI SEKARANG HANYA TERKUNCI DI DALAM DIV INI */
+        <div 
+            className="bg-slate-50 flex flex-col border-b border-slate-200 relative" 
+            onContextMenu={(e) => e.preventDefault()}
+            style={{ 
+                userSelect: 'none', 
+                WebkitUserSelect: 'none', 
+                MozUserSelect: 'none', 
+                msUserSelect: 'none' 
+            }}
+        >
             <div className="h-[75vh] overflow-y-auto p-4 md:p-10 scrollbar-thin bg-slate-200/40">
                 {loading && (
                     <div className="flex flex-col items-center justify-center h-full gap-3">

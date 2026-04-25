@@ -19,29 +19,32 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
         alamat: user.alamat || '',
         status: user.status || 'belum',
         foto_profile: null,
-        _method: 'PATCH', // Penting untuk update form yang mengandung File di Laravel
+        _method: 'PATCH', 
     });
 
     const handlePhotoChange = (e) => {
         const file = e.target.files[0];
-        setData('foto_profile', file);
-        if (file) setPreview(URL.createObjectURL(file));
+        if (file) {
+            setData('foto_profile', file);
+            setPreview(URL.createObjectURL(file));
+        }
     };
 
     const submit = (e) => {
         e.preventDefault();
-        // Menggunakan POST dengan _method PATCH agar upload file berjalan mulus
-        post(route('profile.update'));
+        // Paksa sebagai form data agar file terkirim
+        post(route('profile.update'), {
+            forceFormData: true,
+            preserveScroll: true,
+            onSuccess: () => setPreview(null),
+        });
     };
 
-    // Styling Input Navy
     const inputStyle = "mt-1 block w-full rounded-xl border-slate-200 text-slate-700 font-semibold focus:border-blue-950 focus:ring-blue-950/10 shadow-sm transition-all";
 
     return (
         <section className={className}>
             <form onSubmit={submit} className="space-y-8">
-                
-                
                 <div className="flex flex-col md:flex-row items-center gap-6 pb-6 border-b border-slate-50">
                     <div className="relative group">
                         <div className="w-28 h-28 rounded-3xl bg-blue-950 flex items-center justify-center text-white overflow-hidden shadow-xl border-4 border-white">
@@ -61,32 +64,29 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
                     <div>
                         <h4 className="text-sm font-black text-blue-950 uppercase tracking-widest">Foto Profil</h4>
                         <p className="text-xs text-slate-500 font-medium mt-1">Gunakan foto wajah yang jelas. Format JPG/PNG, Max 2MB.</p>
+                        <InputError className="mt-2" message={errors.foto_profile} />
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    
                     <div>
                         <InputLabel htmlFor="name" value="Nama Lengkap" className="text-blue-950 font-black uppercase text-[10px] tracking-widest mb-1.5" />
                         <TextInput id="name" className={inputStyle} value={data.name} onChange={(e) => setData('name', e.target.value)} required />
                         <InputError className="mt-2" message={errors.name} />
                     </div>
 
-                    
                     <div>
                         <InputLabel htmlFor="email" value="Alamat Email" className="text-blue-950 font-black uppercase text-[10px] tracking-widest mb-1.5" />
                         <TextInput id="email" type="email" className={inputStyle} value={data.email} onChange={(e) => setData('email', e.target.value)} required />
                         <InputError className="mt-2" message={errors.email} />
                     </div>
 
-                    
                     <div>
                         <InputLabel htmlFor="pekerjaan" value="Pekerjaan" className="text-blue-950 font-black uppercase text-[10px] tracking-widest mb-1.5" />
                         <TextInput id="pekerjaan" className={inputStyle} value={data.pekerjaan} onChange={(e) => setData('pekerjaan', e.target.value)} placeholder="Contoh: Pegawai Swasta" />
                         <InputError className="mt-2" message={errors.pekerjaan} />
                     </div>
 
-                    
                     <div className="grid grid-cols-2 gap-4">
                         <div>
                             <InputLabel htmlFor="umur" value="Umur" className="text-blue-950 font-black uppercase text-[10px] tracking-widest mb-1.5" />
@@ -108,7 +108,6 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
                     </div>
                 </div>
 
-                
                 <div>
                     <InputLabel htmlFor="alamat" value="Alamat Lengkap" className="text-blue-950 font-black uppercase text-[10px] tracking-widest mb-1.5" />
                     <textarea 
@@ -121,16 +120,6 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
                     <InputError className="mt-2" message={errors.alamat} />
                 </div>
 
-                
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Status Akun Anda</p>
-                        <p className="text-sm font-bold text-slate-700 capitalize">{user.status_akun || 'Aktif'}</p>
-                    </div>
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></span>
-                </div>
-
-                
                 <div className="flex items-center gap-4 pt-4">
                     <PrimaryButton 
                         disabled={processing}

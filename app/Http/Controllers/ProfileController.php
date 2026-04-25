@@ -8,14 +8,12 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage; // Tambahkan ini
 use Inertia\Inertia;
 use Inertia\Response;
 
 class ProfileController extends Controller
 {
-    /**
-     * Display the user's profile form.
-     */
     public function edit(Request $request): Response
     {
         return Inertia::render('Profile/Edit', [
@@ -24,25 +22,34 @@ class ProfileController extends Controller
         ]);
     }
 
-    /**
-     * Update the user's profile information.
-     */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        
+        // Mengambil data yang sudah divalidasi dari ProfileUpdateRequest
+        $user->fill($request->validated());
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // LOGIKA UNTUK FOTO PROFILE
+        if ($request->hasFile('foto_profile')) {
+            // Hapus foto lama jika ada
+            if ($user->foto_profile) {
+                Storage::disk('public')->delete($user->foto_profile);
+            }
+
+            // Simpan foto baru ke folder 'profile_photos' di disk public
+            $path = $request->file('foto_profile')->store('profile_photos', 'public');
+            $user->foto_profile = $path;
+        }
+
+        $user->save();
 
         return Redirect::route('profile.edit');
     }
 
-    /**
-     * Delete the user's account.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         $request->validate([
@@ -50,9 +57,7 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
-
         Auth::logout();
-
         $user->delete();
 
         $request->session()->invalidate();
