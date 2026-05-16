@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
-// TAMBAHAN: Import Mail dan Mailable
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AdminPaymentNotification;
 
@@ -34,50 +33,56 @@ class RegisteredUserController extends Controller
         ]);
     }
 
-    /**
-     * Proses pendaftaran, penyimpanan user, dan transaksi.
+   /**
+     * Proses pendaftaran, penyimpanan user, dan transaksi menggunakan Midtrans.
      */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-    'name' => 'required|string|max:255',
-    'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-    'password' => ['required', 'confirmed', Rules\Password::defaults()],
-    'alamat' => 'required|string',
-    'pekerjaan' => 'required|string|max:255',
-    'status' => 'required|in:menikah,belum',
-    'umur' => 'required|integer|min:1|max:120',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'alamat' => 'required|string',
+            'pekerjaan' => 'required|string|max:255',
+            'status' => 'required|in:menikah,belum',
+            'umur' => 'required|integer|min:1|max:120',
 
-    'course_ids' => 'required|array|min:1', 
-    'course_ids.*' => 'exists:courses,id',
-    'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
-]);
+            'course_ids' => 'required|array|min:1', 
+            'course_ids.*' => 'exists:courses,id',
+            
+            // Validasi input tambahan dari Midtrans di frontend
+            'midtrans_order_id' => 'required|string',
+            'midtrans_status' => 'required|string|in:success',
+            'snap_token' => 'nullable|string', 
+        ]);
 
         DB::transaction(function () use ($request) {
+            // 🔥 PERBAIKAN: Mengubah 'active' menjadi 'aktif' agar sesuai dengan opsi ENUM di MySQL lokal kamu
+            // Catatan: Jika kolom bertipe boolean, ganti 'aktif' di bawah ini menjadi angka 1 tanpa tanda kutip.
             $user = User::create([
-    'name' => $request->name, 
-    'email' => $request->email,
-    'password' => Hash::make($request->password), 
-    'role' => 'member',
-    'alamat' => $request->alamat, 
-    'pekerjaan' => $request->pekerjaan,
-    'status' => $request->status, 
-    'umur' => $request->umur, // 🔥 TAMBAHAN DI SINI
-    'status_akun' => 'pending', 
-]);
-
-            $buktiPath = $request->file('bukti_pembayaran')->store('bukti_transfer', 'public');
+                'name' => $request->name, 
+                'email' => $request->email,
+                'password' => Hash::make($request->password), 
+                'role' => 'member',
+                'alamat' => $request->alamat, 
+                'pekerjaan' => $request->pekerjaan,
+                'status' => $request->status, 
+                'umur' => $request->umur,
+                'status_akun' => 'pending', // 🌟 DIUBAH: Agar masuk ke antrean "Registrasi Baru"
+            ]);
 
             // Hitung Total Harga dari semua kelas yang dipilih
             $courses = Course::whereIn('id', $request->course_ids)->get();
             $totalHarga = $courses->sum('harga');
 
+            // Menyimpan transaksi dengan mengakali kolom 'bukti_pembayaran' agar tidak NOT NULL error
             $transaction = Transaction::create([
                 'user_id' => $user->id,
-                'kode_transaksi' => 'INV-' . date('Ymd') . '-' . strtoupper(uniqid()),
+                'kode_transaksi' => $request->midtrans_order_id, 
                 'total_harga' => $totalHarga,
-                'bukti_pembayaran' => $buktiPath,
-                'status' => 'pending',
+                'bukti_pembayaran' => 'Midtrans (Lunas)', // Penanda untuk admin bahwa ini dibayar otomatis
+                'status' => 'pending', // 🌟 DIUBAH: Menjadi pending agar admin bisa memeriksa dan klik ACC manual
+                'snap_token' => $request->snap_token ?? null, 
             ]);
 
             // Siapkan data pivot (id_kelas => harga_saat_beli)
@@ -90,13 +95,13 @@ class RegisteredUserController extends Controller
             $transaction->courses()->attach($pivotData);
 
             // ==========================================
-            // FITUR BARU: KIRIM EMAIL KE ADMIN
+            // FITUR KIRIM EMAIL KE ADMIN
             // ==========================================
             $namaKelas = $courses->pluck('nama')->implode(', ');
             $dataEmail = [
                 'nama_member' => $request->name,
                 'nama_kelas' => $namaKelas,
-                'metode_pembayaran' => $request->payment_method ?? 'Transfer/QRIS',
+                'metode_pembayaran' => 'Midtrans Payment Gateway (Otomatis)',
             ];
 
             // Mengirim email ke email Admin
@@ -106,6 +111,6 @@ class RegisteredUserController extends Controller
             event(new Registered($user));
         });
 
-        return redirect()->route('login')->with('status', 'Pendaftaran berhasil! Akun dan bukti pembayaran Anda sedang dicek oleh Admin.');
+        return redirect()->route('login')->with('status', 'Pendaftaran dan pembayaran berhasil! Akun Anda sedang dalam proses verifikasi oleh Admin. Silakan tunggu beberapa saat.');
     }
 }

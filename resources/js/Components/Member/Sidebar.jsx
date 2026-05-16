@@ -1,13 +1,12 @@
 import { Link, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { ShieldCheck, LayoutDashboard, BookOpen, Calendar, Award, Receipt, X, ShoppingBag } from 'lucide-react';
+import { LayoutDashboard, BookOpen, X, ShoppingBag } from 'lucide-react';
 
 export default function Sidebar({ user, isOpen, onClose }) {
     const { url } = usePage();
     const [imageError, setImageError] = useState(false); 
 
-    
     const getAvatarUrl = () => {
         const photoPath = user?.foto_profile || user?.avatar || user?.profile_photo_path || user?.profile_photo_url || user?.photo;
         
@@ -19,7 +18,6 @@ export default function Sidebar({ user, isOpen, onClose }) {
 
     const photoUrl = getAvatarUrl();
 
-    
     const menuItems = [
         { name: 'Beranda', icon: <LayoutDashboard size={20} />, route: 'dashboard', active: url.startsWith('/dashboard') },
         { name: 'Kelas Saya', icon: <BookOpen size={20} />, route: 'member.courses.index', active: url.startsWith('/my-courses') },
@@ -33,19 +31,18 @@ export default function Sidebar({ user, isOpen, onClose }) {
 
     return (
         <>
-            
+            {/* 💻 1. TAMPILAN SIDEBAR UTAMA DESKTOP (Layar Laptop / Lebar) */}
             <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-slate-100 fixed inset-y-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
                 
                 <div className="h-20 flex items-center px-8 border-b border-slate-100/60 bg-white/50 backdrop-blur-sm">
                     <Link href="/" className="flex items-center gap-3 text-2xl font-black text-slate-800 tracking-tight">
-                    <div className="p-2 bg-blue-900 rounded-lg text-white shadow-md shadow-blue-900/20">
+                        <div className="p-2 bg-blue-900 rounded-lg text-white shadow-md shadow-blue-900/20">
                             <BookOpen size={20} strokeWidth={2.5} />
                         </div>
                         Miqot<span className="text-blue-700">Course</span>
                     </Link>
                 </div>
 
-                
                 <div className="flex-1 overflow-y-auto py-8 px-4 flex flex-col gap-1.5 scrollbar-thin">
                     <p className="px-4 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Menu Utama</p>
                     {menuItems.map((item) => (
@@ -58,11 +55,9 @@ export default function Sidebar({ user, isOpen, onClose }) {
                                 : 'text-slate-500 hover:bg-slate-50 hover:text-blue-900 border border-transparent'
                             }`}
                         >
-                            
                             {item.active && (
                                 <motion.div layoutId="activeNav" className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-8 bg-blue-600 rounded-r-full shadow-[0_0_10px_rgba(37,99,235,0.5)]" />
                             )}
-                            
                             
                             <span className={`${item.active ? 'text-blue-700' : 'text-slate-400 group-hover:text-blue-600'} transition-colors duration-300`}>
                                 {item.icon}
@@ -72,10 +67,8 @@ export default function Sidebar({ user, isOpen, onClose }) {
                     ))}
                 </div>
 
-                
                 <div className="p-4 border-t border-slate-100/80 bg-slate-50/50">
                     <Link href={route('profile.edit')} className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-white hover:shadow-md hover:border-slate-200 border border-transparent transition-all duration-300 group">
-                        
                         <div className="w-10 h-10 rounded-full bg-blue-950 flex items-center justify-center text-white font-black shadow-inner border border-blue-200 group-hover:scale-105 transition-transform overflow-hidden shrink-0">
                             {photoUrl && !imageError ? (
                                 <img 
@@ -97,11 +90,10 @@ export default function Sidebar({ user, isOpen, onClose }) {
                 </div>
             </aside>
 
-            
+            {/* 📱 2. TAMPILAN DRAWER SIDEBAR MOBILE (Layar Handphone / Responsive) */}
             <AnimatePresence>
                 {isOpen && (
                     <>
-                        
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
@@ -110,7 +102,6 @@ export default function Sidebar({ user, isOpen, onClose }) {
                             className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden" 
                         />
                         
-                        
                         <motion.aside 
                             initial={{ x: '-100%' }} 
                             animate={{ x: 0 }} 
@@ -118,15 +109,16 @@ export default function Sidebar({ user, isOpen, onClose }) {
                             transition={{ type: 'spring', damping: 25, stiffness: 200 }} 
                             className="fixed inset-y-0 left-0 w-[280px] bg-white shadow-2xl z-50 flex flex-col lg:hidden border-r border-slate-100"
                         >
+                            {/* 🔥 PERBAIKAN: Menyelaraskan teks logo dan ikon di Mobile agar sama dengan Desktop */}
                             <div className="h-20 flex items-center justify-between px-6 border-b border-slate-100/60 bg-slate-50/50">
                                 <span className="text-xl font-black text-slate-800 flex items-center gap-2.5">
-                                    <div className="p-1.5 bg-gradient-to-tr from-blue-950 to-blue-600 rounded-lg shadow-sm">
-                                        <ShieldCheck size={20} className="text-white" strokeWidth={2.5}/>
+                                    <div className="p-2 bg-blue-900 rounded-lg text-white shadow-md shadow-blue-900/20">
+                                        <BookOpen size={16} strokeWidth={2.5}/>
                                     </div>
-                                    Haji<span className="text-blue-700">Course</span>
+                                    Miqot<span className="text-blue-700">Course</span>
                                 </span>
                                 <button onClick={onClose} className="p-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 rounded-xl text-slate-500 transition-colors">
-                                    <X size={20}/>
+                                    <X size={18}/>
                                 </button>
                             </div>
                             
@@ -150,7 +142,6 @@ export default function Sidebar({ user, isOpen, onClose }) {
                                     </Link>
                                 ))}
                             </div>
-                            
                             
                             <div className="p-4 border-t border-slate-100/80 bg-slate-50/50">
                                 <Link href={route('profile.edit')} onClick={onClose} className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-white border border-transparent transition-all duration-300">

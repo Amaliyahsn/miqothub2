@@ -2,37 +2,36 @@ import { useState, useEffect } from 'react';
 import MemberLayout from '@/Layouts/MemberLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layout, Upload, X, CheckCircle2, ChevronRight, Receipt, ShoppingBag, Sparkles, CreditCard, Landmark, Copy, ChevronDown, Check } from 'lucide-react';
+import { Layout, X, CheckCircle2, ChevronRight, ShoppingBag, Sparkles, CreditCard, ArrowRight } from 'lucide-react';
+import axios from 'axios';
 
 export default function Catalog({ auth, courses }) {
-    // Mengambil settings dari props (Inertia)
-    const { app_settings } = usePage().props;
-
-    // Fallback data jika di database/backend belum diisi
-    const settings = {
-        bank1_name: app_settings?.bank1_name || "BANK MANDIRI",
-        bank1_owner: app_settings?.bank1_owner || "PT MIQOTHUB DIGITAL",
-        bank1_number: app_settings?.bank1_number || "1234567890",
-        bank1_active: app_settings?.bank1_active ?? true,
-
-        bank2_name: app_settings?.bank2_name || "BANK BCA",
-        bank2_owner: app_settings?.bank2_owner || "PT MIQOTHUB DIGITAL",
-        bank2_number: app_settings?.bank2_number || "0987654321",
-        bank2_active: app_settings?.bank2_active ?? true,
-        
-        // Perbaikan: Mengambil dari storage jika ada, jika tidak pakai placeholder
-        qris_path: app_settings?.qris_image ? `/storage/${app_settings.qris_image}` : null 
-    };
-
     const [selectedCourse, setSelectedCourse] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [copied, setCopied] = useState(false);
+    const [isMidtransLoading, setIsMidtransLoading] = useState(false);
     
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, reset } = useForm({
         course_id: '',
-        payment_method: '',
-        bukti_pembayaran: null,
+        payment_method: 'midtrans', // Set default langsung ke midtrans gateway
+        midtrans_order_id: '',
+        midtrans_status: '',
     });
+
+    // Memuat Script Snap Midtrans secara otomatis di background
+    useEffect(() => {
+        const midtransScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
+        const clientKey = "Mid-client-P-0tdyOcjZ6HxNXs";
+
+        const script = document.createElement('script');
+        script.src = midtransScriptUrl;
+        script.setAttribute('data-client-key', clientKey);
+        script.async = true;
+
+        document.body.appendChild(script);
+
+        return () => {
+            document.body.removeChild(script);
+        };
+    }, []);
 
     const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
 
@@ -40,43 +39,72 @@ export default function Catalog({ auth, courses }) {
         setSelectedCourse(course);
         setData({
             course_id: course.id,
-            payment_method: '',
-            bukti_pembayaran: null
+            payment_method: 'midtrans',
+            midtrans_order_id: '',
+            midtrans_status: '',
         });
-        setPreview(null);
     };
 
     const closeModal = () => {
-        if (preview) URL.revokeObjectURL(preview);
         setSelectedCourse(null);
-        setPreview(null);
         reset();
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        if (preview) URL.revokeObjectURL(preview);
-        setData('bukti_pembayaran', file);
-        setPreview(URL.createObjectURL(file));
-    };
-
-    const copyToClipboard = (text) => {
-        if (!text) return;
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-    };
-
-    const submit = (e) => {
+    // Fungsi pemicu utama popup Midtrans Snap (Sama persis dengan alur Register)
+    const handleCatalogPayment = async (e) => {
         e.preventDefault();
-        post(route('member.purchase'), {
-            onSuccess: () => closeModal(),
-        });
+        setIsMidtransLoading(true);
+
+        try {
+            const response = await axios.post(route('payment.token'), {
+                amount: selectedCourse.harga,
+                name: auth.user.name,
+                email: auth.user.email
+            });
+
+            const snapToken = response.data.snap_token;
+            const orderId = response.data.order_id;
+
+            window.snap.pay(snapToken, {
+                onSuccess: function(result) {
+                    // Update data status ke form Inertia setelah user sukses bayar di simulator
+                    setData(prev => ({
+                        ...prev,
+                        midtrans_order_id: orderId,
+                        midtrans_status: 'success'
+                    }));
+                },
+                onPending: function(result) {
+                    alert("Pembayaran pending. Silakan selesaikan pembayaran Anda.");
+                    setIsMidtransLoading(false);
+                },
+                onError: function(result) {
+                    alert("Pembayaran gagal. Silakan coba lagi.");
+                    setIsMidtransLoading(false);
+                },
+                onClose: function() {
+                    alert("Anda menutup halaman pendaftaran sebelum menyelesaikan pembayaran.");
+                    setIsMidtransLoading(false);
+                }
+            });
+
+        } catch (error) {
+            console.error("Midtrans Error:", error);
+            alert("Gagal menyiapkan gerbang pembayaran otomatis. Silakan hubungi admin.");
+            setIsMidtransLoading(false);
+        }
     };
 
-    // Pengecekan status bank yang lebih aman
-    const isBankActive = (status) => status === true || status === 'true' || status === 1 || status === '1';
+    // Sinkronisasi Otomatis: Jika pembayaran sukses, langsung push data registrasi kelas ke backend Laravel
+    useEffect(() => {
+        if (data.midtrans_status === 'success' && data.midtrans_order_id) {
+            post(route('member.purchase'), {
+                preserveScroll: true,
+                onSuccess: () => closeModal(),
+                onFinish: () => setIsMidtransLoading(false)
+            });
+        }
+    }, [data.midtrans_status, data.midtrans_order_id]);
 
     return (
         <MemberLayout user={auth.user}>
@@ -178,164 +206,72 @@ export default function Catalog({ auth, courses }) {
                 </div>
             )}
 
-           <AnimatePresence>
-    {selectedCourse && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-            <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                exit={{ opacity: 0 }} 
-                onClick={closeModal} 
-                className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" 
-            />
-            
-            <motion.div 
-                initial={{ scale: 0.95, opacity: 0, y: 20 }} 
-                animate={{ scale: 1, opacity: 1, y: 0 }} 
-                exit={{ scale: 0.95, opacity: 0, y: 20 }} 
-                className="relative z-10 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border border-slate-100 max-h-[90vh]"
-            >
-                {/* Header */}
-                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 shrink-0">
-                    <h2 className="text-lg font-black text-blue-950 flex items-center gap-2">
-                        <CreditCard size={20} className="text-blue-600"/> Checkout Kelas
-                    </h2>
-                    <button onClick={closeModal} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl transition-colors">
-                        <X size={20} strokeWidth={2.5} />
-                    </button>
-                </div>
-
-                <form onSubmit={submit} className="p-6 md:p-8 space-y-6 overflow-y-auto custom-scrollbar">
-                    {/* Panel Pembayaran */}
-                    <div className="p-6 bg-gradient-to-br from-blue-950 to-blue-900 rounded-2xl relative overflow-hidden text-white shadow-inner">
-                        <div className="relative z-10">
-                            <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1.5">Total Tagihan</p>
-                            <p className="text-3xl font-black text-white mb-6 tracking-tight">
-                                {formatRupiah(selectedCourse.harga)}
-                            </p>
-                            
-                            <div className="space-y-3">
-                                <label className="block text-xs font-bold text-blue-200 uppercase tracking-tighter">Pilih Metode Pembayaran:</label>
-                                <div className="relative">
-                                    <select 
-                                        value={data.payment_method} 
-                                        onChange={e => setData('payment_method', e.target.value)}
-                                        className="w-full p-3.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white focus:ring-2 focus:ring-blue-400 outline-none cursor-pointer text-sm font-medium appearance-none"
-                                        required
-                                    >
-                                        <option value="" className="text-slate-900">-- Pilih Pembayaran --</option>
-                                        
-                                        {/* Logika: Hanya muncul jika status di settings adalah '1' */}
-                                        {settings?.bank1_active === '1' && (
-                                            <option value="bank1" className="text-slate-900">{settings.bank1_name}</option>
-                                        )}
-                                        
-                                        {settings?.bank2_active === '1' && (
-                                            <option value="bank2" className="text-slate-900">{settings.bank2_name}</option>
-                                        )}
-                                        
-                                        {settings?.qris_active === '1' && (
-                                            <option value="qris" className="text-slate-900">QRIS (Otomatis)</option>
-                                        )}
-                                    </select>
-                                    <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-blue-200">
-                                        <ChevronDown size={18} />
-                                    </div>
-                                </div>
-
-                                {/* Detail Rekening (Muncul secara animasi saat dipilih) */}
-                                <AnimatePresence mode="wait">
-                                    {(data.payment_method === 'bank1' || data.payment_method === 'bank2') && (
-                                        <motion.div 
-                                            key={data.payment_method}
-                                            initial={{ opacity: 0, y: 10 }} 
-                                            animate={{ opacity: 1, y: 0 }} 
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/20 flex items-center gap-3.5 mt-2"
-                                        >
-                                            <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center text-white shrink-0">
-                                                <Landmark size={20} />
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-[10px] font-bold text-blue-200 uppercase">
-                                                    {data.payment_method === 'bank1' ? settings.bank1_name : settings.bank2_name}
-                                                </p>
-                                                <p className="text-lg font-black text-white font-mono tracking-widest leading-none my-1">
-                                                    {data.payment_method === 'bank1' ? settings.bank1_number : settings.bank2_number}
-                                                </p>
-                                                <p className="text-[11px] font-medium text-blue-100 truncate">
-                                                    a.n. {data.payment_method === 'bank1' ? settings.bank1_owner : settings.bank2_owner}
-                                                </p>
-                                            </div>
-                                            <button 
-                                                type="button" 
-                                                onClick={() => copyToClipboard(data.payment_method === 'bank1' ? settings.bank1_number : settings.bank2_number)} 
-                                                className="p-2 bg-white/10 hover:bg-white/30 rounded-lg transition-colors text-white shrink-0"
-                                            >
-                                                {copied ? <Check size={18} className="text-emerald-400"/> : <Copy size={18}/>}
-                                            </button>
-                                        </motion.div>
-                                    )}
-
-                                    {data.payment_method === 'qris' && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, scale: 0.95 }} 
-                                            animate={{ opacity: 1, scale: 1 }} 
-                                            exit={{ opacity: 0 }}
-                                            className="bg-white text-center p-4 rounded-xl mt-2 shadow-inner"
-                                        >
-                                            <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest mb-2">Scan Kode QRIS</p>
-                                            {settings.qris_path ? (
-                                                <img src={`/storage/${settings.qris_path}`} alt="QRIS" className="mx-auto w-40 h-40 rounded-lg border border-slate-200 object-contain" />
-                                            ) : (
-                                                <div className="w-32 h-32 bg-slate-100 mx-auto flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300">
-                                                    <Layout className="text-slate-300" size={32} />
-                                                    <p className="text-[9px] text-slate-400 px-2 mt-1">QRIS Belum Diunggah</p>
-                                                </div>
-                                            )}
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
+            <AnimatePresence>
+                {selectedCourse && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+                        <motion.div 
+                            initial={{ opacity: 0 }} 
+                            animate={{ opacity: 1 }} 
+                            exit={{ opacity: 0 }} 
+                            onClick={closeModal} 
+                            className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" 
+                        />
+                        
+                        <motion.div 
+                            initial={{ scale: 0.95, opacity: 0, y: 20 }} 
+                            animate={{ scale: 1, opacity: 1, y: 0 }} 
+                            exit={{ scale: 0.95, opacity: 0, y: 20 }} 
+                            className="relative z-10 w-full max-w-lg bg-white rounded-[2rem] shadow-2xl flex flex-col overflow-hidden border border-slate-100"
+                        >
+                            {/* Header */}
+                            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/80 shrink-0">
+                                <h2 className="text-lg font-black text-blue-950 flex items-center gap-2">
+                                    <CreditCard size={20} className="text-blue-600"/> Konfirmasi Pendaftaran
+                                </h2>
+                                <button onClick={closeModal} className="p-2 text-slate-400 hover:text-rose-500 rounded-xl transition-colors">
+                                    <X size={20} strokeWidth={2.5} />
+                                </button>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Upload Section */}
-                    <div className="space-y-3">
-                        <label className="text-sm font-black text-slate-700 flex items-center gap-2">
-                            <Receipt size={16} className="text-blue-600"/> Bukti Transfer
-                        </label>
-                        <div className="relative w-full h-40 rounded-[1.25rem] border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center overflow-hidden group hover:border-blue-500 transition-all cursor-pointer">
-                            {preview ? (
-                                <div className="relative w-full h-full">
-                                    <img src={preview} alt="Preview" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                        <p className="text-white text-xs font-bold bg-blue-600 px-4 py-2 rounded-full">Ganti Foto</p>
+                            <form onSubmit={handleCatalogPayment} className="p-6 md:p-8 space-y-6">
+                                {/* Panel Ringkasan Tagihan */}
+                                <div className="p-6 bg-gradient-to-br from-blue-950 to-blue-900 rounded-2xl relative overflow-hidden text-white shadow-inner">
+                                    <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Program yang Diikuti</p>
+                                    <h4 className="text-lg font-bold text-white mb-4 line-clamp-2 leading-tight">{selectedCourse.nama}</h4>
+                                    
+                                    <div className="border-t border-white/10 pt-4">
+                                        <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Total Biaya Investasi</p>
+                                        <p className="text-3xl font-black text-white tracking-tight">
+                                            {formatRupiah(selectedCourse.harga)}
+                                        </p>
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="text-center p-4">
-                                    <Upload size={24} className="mx-auto mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                                    <p className="text-xs text-slate-500 font-bold">Upload struk pembayaran</p>
-                                </div>
-                            )}
-                            <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required />
-                        </div>
-                    </div>
 
-                    <button 
-                        type="submit" 
-                        disabled={processing || !data.bukti_pembayaran || !data.payment_method} 
-                        className="w-full py-4 bg-blue-950 text-white rounded-2xl font-black disabled:opacity-50 disabled:bg-slate-300 flex items-center justify-center gap-2.5 shadow-xl active:scale-[0.98] transition-all"
-                    >
-                        {processing ? 'Memproses...' : 'Kirim Konfirmasi'}
-                        {!processing && <CheckCircle2 size={18} />}
-                    </button>
-                </form>
-            </motion.div>
-        </div>
-    )}
-</AnimatePresence>
+                                {/* Informasi Sistem */}
+                                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+                                    <CheckCircle2 className="text-blue-600 shrink-0 mt-0.5" size={18} />
+                                    <div className="space-y-1">
+                                        <p className="text-xs font-bold text-blue-950">Metode Pembayaran Instan (Midtrans)</p>
+                                        <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+                                            Mendukung scan QRIS otomatis, GoPay, ShopeePay, Virtual Account Bank Transfer, dll.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Tombol Eksekusi Langsung Menembak Gateway */}
+                                <button 
+                                    type="submit" 
+                                    disabled={processing || isMidtransLoading} 
+                                    className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black disabled:opacity-50 disabled:bg-slate-300 flex items-center justify-center gap-2.5 shadow-xl shadow-blue-600/10 active:scale-[0.98] transition-all uppercase tracking-wider text-xs"
+                                >
+                                    {processing || isMidtransLoading ? 'Menghubungkan Server...' : 'Lanjut ke Pembayaran'}
+                                    {!processing && !isMidtransLoading && <ArrowRight size={16} />}
+                                </button>
+                            </form>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </MemberLayout>
     );
 }

@@ -28,50 +28,50 @@ export default function Finance({ auth, keuangan, chartData }) {
 
     // Card Rekap Keuangan
     const financeStats = [
-        { title: 'Pendapatan Hari Ini', value: formatRupiah(keuangan?.hari_ini), icon: <Wallet size={24} />, bg: 'bg-amber-50', text: 'text-amber-600' },
-        { title: 'Minggu Ini', value: formatRupiah(keuangan?.minggu_ini), icon: <CalendarDays size={24} />, bg: 'bg-blue-50', text: 'text-blue-600' },
-        { title: 'Bulan Ini', value: formatRupiah(keuangan?.bulan_ini), icon: <Calendar size={24} />, bg: 'bg-indigo-50', text: 'text-indigo-600' },
-        { title: 'Tahun Ini', value: formatRupiah(keuangan?.tahun_ini), icon: <ArrowUpRight size={24} />, bg: 'bg-emerald-50', text: 'text-emerald-600' },
+        { title: 'Pendapatan Hari Ini', value: formatRupiah(keuangan?.hari_ini), icon: <Wallet size={22} />, bg: 'bg-amber-50', text: 'text-amber-600' },
+        { title: 'Minggu Ini', value: formatRupiah(keuangan?.minggu_ini), icon: <CalendarDays size={22} />, bg: 'bg-blue-50', text: 'text-blue-600' },
+        { title: 'Bulan Ini', value: formatRupiah(keuangan?.bulan_ini), icon: <Calendar size={22} />, bg: 'bg-indigo-50', text: 'text-indigo-600' },
+        { title: 'Tahun Ini', value: formatRupiah(keuangan?.tahun_ini), icon: <ArrowUpRight size={22} />, bg: 'bg-emerald-50', text: 'text-emerald-600' },
     ];
 
     return (
         <AdminLayout user={auth.user}>
             <Head title="Laporan Keuangan" />
 
-            <div className="mb-8 flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                        <TrendingUp className="text-emerald-500" /> Laporan Keuangan
-                    </h1>
-                    <p className="text-gray-500 mt-1">Rekapitulasi pendapatan penjualan kelas.</p>
-                </div>
+            {/* Header Section - Responsif Text */}
+            <div className="mb-6 sm:mb-8">
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                    <TrendingUp className="text-emerald-500 shrink-0" size={24} /> Laporan Keuangan
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1 font-medium">Rekapitulasi pendapatan penjualan kelas.</p>
             </div>
 
-            {/* Deretan Rekap Angka di Atas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            {/* Deretan Rekap Angka di Atas - Adaptif Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {financeStats.map((item, index) => (
-                    <div key={index} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-5">
-                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-sm ${item.bg} ${item.text}`}>
+                    <div key={index} className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-4 sm:gap-5">
+                        <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shadow-sm shrink-0 ${item.bg} ${item.text}`}>
                             {item.icon}
                         </div>
-                        <div>
-                            <p className="text-sm font-medium text-gray-500">{item.title}</p>
-                            <h3 className="text-2xl font-bold text-gray-900 mt-1">{item.value}</h3>
+                        <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-semibold text-gray-400 truncate">{item.title}</p>
+                            <h3 className="text-xl sm:text-2xl font-black text-gray-900 mt-0.5 tracking-tight truncate">{item.value}</h3>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Grafik Pemasukan di Bawah */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
-                <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-50">
+            {/* Grafik Pemasukan di Bawah - Penyelarasan Padding Mobile */}
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-6 sm:mb-8">
+                <div className="flex justify-between items-center mb-6 sm:mb-8 pb-4 border-b border-gray-50">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">Grafik Pemasukan</h2>
-                        <p className="text-sm text-gray-500">Tren penjualan 7 hari terakhir</p>
+                        <h2 className="text-base sm:text-lg font-black text-gray-900 tracking-tight">Grafik Pemasukan</h2>
+                        <p className="text-xs sm:text-sm text-gray-500 font-medium">Tren penjualan 7 hari terakhir</p>
                     </div>
                 </div>
                 
-                <div className="h-96 w-full">
+                {/* Tinggi grafik dibuat otomatis responsif (h-64 di HP, h-96 di laptop) */}
+                <div className="h-64 sm:h-96 w-full text-xs font-medium">
                     <ResponsiveContainer width="100%" height="100%">
                         {/* Margin left diubah menjadi 20 agar label Rp tidak terpotong */}
                         <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 20, bottom: 0 }}>
@@ -82,14 +82,14 @@ export default function Finance({ auth, keuangan, chartData }) {
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                            <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#64748b' }} dy={10} />
                             
                             {/* Width ditambahkan & tickFormatter memanggil fungsi pintar kita */}
                             <YAxis 
                                 width={65} 
                                 axisLine={false} 
                                 tickLine={false} 
-                                tick={{ fontSize: 12, fill: '#64748b' }} 
+                                tick={{ fontSize: 11, fill: '#64748b' }} 
                                 tickFormatter={formatYAxisRingkas} 
                             />
                             

@@ -608,116 +608,122 @@ const [selectedPost, setSelectedPost] = useState(null);
 </section>
 
 {/* --- NEWS / ACTIVITIES SECTION --- */}
-<section id="berita" className="relative z-10 py-12 md:py-16 bg-white">
+<section id="berita" className="relative z-10 py-12 md:py-20 bg-slate-50/50">
     <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, margin: "-50px" }}
         variants={staggerContainer}
-        className="max-w-7xl mx-auto px-4 sm:px-6"
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
     >
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-            <div className="text-left">
+        {/* Header Section - Diperbaiki total agar text melebar penuh */}
+        <div className="w-full flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+            <div className="w-full text-left">
                 <motion.h2 
                     variants={fadeUpVariant}
-                    className="text-2xl sm:text-3xl font-black text-slate-900 mb-2"
+                    className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight mb-2 whitespace-normal"
                 >
                     Kegiatan Terbaru
                 </motion.h2>
                 <motion.p 
                     variants={fadeUpVariant}
-                    className="text-slate-500 text-sm sm:text-base max-w-xl"
+                    className="text-slate-500 text-xs sm:text-sm md:text-base font-semibold max-w-none md:max-w-3xl leading-relaxed"
                 >
-                    Informasi seputar dokumentasi kegiatan MiqotHub.
+                    Informasi seputar dokumentasi kegiatan serta pengumuman berkala dari MiqotHub.
                 </motion.p>
             </div>
         </div>
 
-        {/* Scrollable News Cards */}
-        {/* Tambahkan pengecekan opsional chaining (?.) untuk keamanan ekstra */}
+        {/* Conditional Rendering Area */}
         {!latestPosts || latestPosts.length === 0 ? (
             <motion.div 
                 variants={fadeUpVariant}
-                className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200 text-slate-400 italic"
+                className="text-center py-16 sm:py-20 bg-white rounded-3xl border-2 border-dashed border-slate-200 text-slate-400 font-medium text-xs sm:text-sm"
             >
                 Belum ada berita atau kegiatan terbaru untuk saat ini.
             </motion.div>
         ) : (
-            <div className="relative">
-                {/* Gunakan class 'scrollbar-hide' jika sudah menginstall pluginnya, atau ganti dengan 'overflow-x-auto' standar */}
-                <div className="flex overflow-x-auto pb-8 gap-6 snap-x snap-mandatory scrollbar-hide scroll-smooth">
+            /* 🔥 PERBAIKAN RESPONSIVE: Geser Slider di Mobile, Grid Sempurna di Laptop */
+            <div className="relative -mx-4 px-4 sm:mx-0 sm:px-0">
+                <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 overflow-x-auto sm:overflow-x-visible pb-6 sm:pb-0 gap-5 sm:gap-6 snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth">
                     {latestPosts.map((post) => (
-                       <motion.div
-        key={post.id}
-        variants={fadeUpVariant}
-        className="min-w-[280px] sm:min-w-[340px] lg:min-w-[calc(33.333%-16px)] snap-start group"
-    >
-        <div className="bg-white rounded-3xl border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-500 hover:-translate-y-2 h-full flex flex-col">
-            
-            {/* Image Section */}
-            <div className="aspect-[16/10] bg-slate-100 overflow-hidden relative">
-                
-                {/* Category */}
-                <div className="absolute top-4 left-4 z-20">
-                    <span className="bg-blue-600 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest shadow-lg shadow-blue-500/30">
-                        {post.category}
-                    </span>
-                </div>
+                        <motion.div
+                            key={post.id}
+                            variants={fadeUpVariant}
+                            className="min-w-[290px] xs:min-w-[320px] sm:min-w-0 snap-center group flex flex-col"
+                        >
+                            <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/60 overflow-hidden hover:shadow-2xl hover:shadow-blue-950/5 transition-all duration-500 hover:-translate-y-2 h-full flex flex-col shadow-sm">
+                                
+                                {/* Image Section */}
+                                <div className="aspect-[16/10] bg-slate-100 overflow-hidden relative shrink-0">
+                                    
+                                    {/* Category Tag */}
+                                    <div className="absolute top-3 left-3 sm:top-4 sm:left-4 z-20">
+                                        <span className={`text-[9px] sm:text-[10px] font-black px-3 py-1 rounded-md uppercase tracking-wider shadow-sm border ${
+                                            post.category === 'Pengumuman' ? 'bg-rose-600 text-white border-rose-700 shadow-rose-600/20' :
+                                            post.category === 'Berita' ? 'bg-indigo-600 text-white border-indigo-700 shadow-indigo-600/20' :
+                                            'bg-blue-600 text-white border-blue-700 shadow-blue-600/20'
+                                        }`}>
+                                            {post.category}
+                                        </span>
+                                    </div>
 
-                {/* Image + fallback */}
-                {post.image ? (
-                    <img
-                        src={`/storage/${post.image}`}
-                        alt={post.title}
-                        onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = '/images/default-news.jpg';
-                        }}
-                        className="w-full h-full object-cover object-center transition-transform duration-700 ease-in-out group-hover:scale-105"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-blue-100/30">
-                        <FileText size={40} className="text-blue-300" />
-                    </div>
-                )}
-            </div>
+                                    {/* Image with seamless transition effects */}
+                                    {post.image ? (
+                                        <img
+                                            src={`/storage/${post.image}`}
+                                            alt={post.title}
+                                            onError={(e) => {
+                                                e.target.onerror = null;
+                                                e.target.src = '/images/default-news.jpg';
+                                            }}
+                                            className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-105"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center bg-blue-50/50">
+                                            <FileText size={36} className="text-blue-300" />
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/10 via-transparent to-transparent opacity-60"></div>
+                                </div>
 
-            {/* Content */}
-            <div className="p-6 flex flex-col flex-grow">
-                <div className="flex items-center gap-3 text-slate-400 text-[11px] mb-3 font-medium">
-                    <div className="flex items-center gap-1.5">
-                        <Calendar size={14} className="text-blue-500" />
-                        <span>
-                            {new Date(post.created_at).toLocaleDateString('id-ID', {
-                                day: 'numeric',
-                                month: 'long',
-                                year: 'numeric'
-                            })}
-                        </span>
-                    </div>
-                </div>
+                                {/* Content Body Area */}
+                                <div className="p-5 sm:p-6 flex flex-col flex-grow bg-white">
+                                    {/* Meta Date */}
+                                    <div className="flex items-center gap-2 text-slate-400 text-[10px] sm:text-[11px] mb-2 sm:mb-2.5 font-bold tracking-wide">
+                                        <Calendar size={13} className="text-blue-600" />
+                                        <span>
+                                            {new Date(post.created_at).toLocaleDateString('id-ID', {
+                                                day: 'numeric',
+                                                month: 'long',
+                                                year: 'numeric'
+                                            })}
+                                        </span>
+                                    </div>
 
-                <h3 className="text-lg font-bold text-slate-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                    {post.title}
-                </h3>
+                                    {/* Article Title */}
+                                    <h3 className="text-sm sm:text-base font-black text-slate-900 mb-2.5 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug tracking-tight">
+                                        {post.title}
+                                    </h3>
 
-                <div
-                    className="text-slate-500 text-sm line-clamp-2 mb-5 leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: post.content }}
-                />
+                                    {/* Snippet Content Description */}
+                                    <div
+                                        className="text-slate-500 text-xs sm:text-sm line-clamp-2 mb-5 leading-relaxed font-medium break-all"
+                                        dangerouslySetInnerHTML={{ __html: post.content }}
+                                    />
 
-                <div className="mt-auto">
-                    <button
-                onClick={() => setSelectedPost(post)}
-                className="w-full py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300"
-            >
-                Baca Selengkapnya
-            </button>
-                </div>
-            </div>
-        </div>
-    </motion.div>
+                                    {/* Button Container - Grounded safely at bottom */}
+                                    <div className="mt-auto pt-2">
+                                        <button
+                                            onClick={() => setSelectedPost(post)}
+                                            className="w-full py-3 bg-slate-50 text-slate-700 border border-slate-200/80 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 group-hover:bg-blue-900 group-hover:border-blue-900 group-hover:text-white shadow-sm transition-all duration-300 select-none active:scale-[0.98]"
+                                        >
+                                            Baca Selengkapnya
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
                     ))}
                 </div>
             </div>
@@ -956,7 +962,7 @@ const [selectedPost, setSelectedPost] = useState(null);
                 )}
             </AnimatePresence>
 
-            {/* Floating WhatsApp Button */}
+            {/* --- Floating WhatsApp Button - Aman & Anti Tabrakan Navbar Mobile --- */}
             <a
                 href={`https://wa.me/${app_settings?.wa_admin || " "}?text=${encodeURIComponent(
                     app_settings?.wa_message ||
@@ -964,19 +970,22 @@ const [selectedPost, setSelectedPost] = useState(null);
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="fixed bottom-5 right-5 z-[999] group active:scale-90 transition-transform"
+                // 🔥 PERBAIKAN: bottom-20 di mobile biar gak nabrak navbar bawah, sm:bottom-5 di desktop
+                className="fixed bottom-20 right-5 sm:bottom-5 sm:right-5 z-[999] group active:scale-95 transition-all duration-300"
             >
-                <div className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-3 rounded-full shadow-lg transition-all duration-300">
+                {/* 🔥 PERBAIKAN: Mengatur padding adaptif (p-3.5 di mobile berbentuk lingkaran, sm:px-4 sm:py-3 di desktop) */}
+                <div className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-xl shadow-emerald-950/10 transition-all duration-300 border border-emerald-400/20">
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
-                        className="w-5 h-5"
+                        className="w-5 h-5 sm:w-5 sm:h-5"
                         fill="currentColor"
                         viewBox="0 0 24 24"
                     >
                         <path d="M20.52 3.48A11.82 11.82 0 0012.01 0C5.38 0 .02 5.36.02 11.98c0 2.11.55 4.17 1.6 5.99L0 24l6.21-1.63a11.9 11.9 0 005.8 1.48h.01c6.63 0 11.99-5.36 11.99-11.98 0-3.2-1.25-6.2-3.49-8.39z" />
                     </svg>
 
-                    <span className="hidden sm:inline text-sm font-semibold">
+                    {/* Teks otomatis tersembunyi di mobile, hanya muncul di desktop layar lebar */}
+                    <span className="hidden sm:inline text-sm font-bold tracking-wide select-none">
                         Hubungi Admin
                     </span>
                 </div>

@@ -6,7 +6,7 @@ import { X, Image as ImageIcon, Trash2, HelpCircle, Save, Plus, ListTodo } from 
 export default function QuestionModal({ show, onClose, exerciseId, question }) {
     const isEdit = !!question;
 
-    const { data, setData, post, processing, reset, errors } = useForm({
+    const { data, setData, post, processing, reset, errors, transform } = useForm({
         pertanyaan: '',
         jawaban_benar: 0, // Menggunakan index (0=A, 1=B, dst)
         options: [
@@ -19,13 +19,41 @@ export default function QuestionModal({ show, onClose, exerciseId, question }) {
         _method: 'post'
     });
 
+    // 💡 PERBAIKAN: Transformasi data array menjadi opsi_a, opsi_b, dst sebelum dikirim
+    transform((currentData) => {
+        const letters = ['a', 'b', 'c', 'd', 'e'];
+        
+        const transformedData = {
+            pertanyaan: currentData.pertanyaan,
+            jawaban_benar: letters[currentData.jawaban_benar] || 'a', // Ubah index (0) jadi huruf ('a')
+            _method: currentData._method,
+        };
+
+        if (currentData.gambar_soal) transformedData.gambar_soal = currentData.gambar_soal;
+        if (currentData.remove_gambar_soal) transformedData.remove_gambar_soal = 1;
+
+        // Ekstrak array options menjadi field individu
+        letters.forEach((letter, index) => {
+            const opt = currentData.options[index];
+            if (opt) {
+                transformedData[`opsi_${letter}`] = opt.teks;
+                if (opt.gambar) transformedData[`gambar_${letter}`] = opt.gambar;
+                if (opt.remove_gambar) transformedData[`remove_gambar_${letter}`] = 1;
+            } else {
+                transformedData[`opsi_${letter}`] = ''; // Kirim kosong jika opsi tidak ada
+            }
+        });
+
+        return transformedData;
+    });
+
     useEffect(() => {
         if (show) {
             if (isEdit) {
                 // Mapping data dari backend (opsi_a, b, c...) ke array options
                 const loadedOptions = [];
                 ['a', 'b', 'c', 'd', 'e'].forEach((letter, index) => {
-                    if (question[`opsi_${letter}`] !== null && question[`opsi_${letter}`] !== undefined) {
+                    if (question[`opsi_${letter}`] !== null && question[`opsi_${letter}`] !== undefined && question[`opsi_${letter}`] !== '') {
                         loadedOptions.push({
                             teks: question[`opsi_${letter}`],
                             gambar: null,
@@ -38,7 +66,10 @@ export default function QuestionModal({ show, onClose, exerciseId, question }) {
                 setData({
                     pertanyaan: question.pertanyaan,
                     jawaban_benar: ['a', 'b', 'c', 'd', 'e'].indexOf(question.jawaban_benar),
-                    options: loadedOptions,
+                    options: loadedOptions.length > 0 ? loadedOptions : [
+                        { teks: '', gambar: null, remove_gambar: false },
+                        { teks: '', gambar: null, remove_gambar: false }
+                    ],
                     gambar_soal: null,
                     remove_gambar_soal: false,
                     _method: 'put'
@@ -83,9 +114,13 @@ export default function QuestionModal({ show, onClose, exerciseId, question }) {
         
         post(routePath, {
             forceFormData: true,
+            preserveScroll: true,
             onSuccess: () => {
                 reset();
                 onClose();
+            },
+            onError: (err) => {
+                console.error("Validasi Error dari Laravel:", err); // Membantu debug jika gagal
             }
         });
     };

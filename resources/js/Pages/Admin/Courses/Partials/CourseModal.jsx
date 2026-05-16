@@ -181,8 +181,8 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             <div>
                                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Status Daftar</label>
                                                 <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 py-3 px-4 text-sm font-bold shadow-sm outline-none transition-colors cursor-pointer appearance-none">
-                                                    <option value="onsale">✅ Buka (On Sale)</option>
-                                                    <option value="offsale">⛔ Tutup (Off Sale)</option>
+                                                    <option value="onsale">Buka (On Sale)</option>
+                                                    <option value="offsale">Tutup (Off Sale)</option>
                                                 </select>
                                             </div>
                                         </div>

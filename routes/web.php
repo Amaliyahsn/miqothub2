@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Member\ReviewController;
 use App\Http\Controllers\Admin\PostController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Member\CourseController as MemberCourseController;
 use App\Http\Controllers\Member\ExerciseController;
 use Illuminate\Support\Facades\Route;
@@ -31,11 +32,11 @@ Route::get('/', function () {
             return $course;
         });
 
-$reviews = \App\Models\Review::with('user:id,name')
-    ->where('tampilkan_di_landing', true)
-    ->where('rating', '>=', 4)
-    ->latest()
-    ->get(); // 🔥 HAPUS take(6)
+    $reviews = \App\Models\Review::with('user:id,name')
+        ->where('tampilkan_di_landing', true)
+        ->where('rating', '>=', 4)
+        ->latest()
+        ->get(); // 🔥 HAPUS take(6)
 
     // 3. Ambil Pengaturan Situs (Sudah benar)
     $settings = \App\Models\Setting::pluck('value', 'key')->toArray();
@@ -57,6 +58,10 @@ $reviews = \App\Models\Review::with('user:id,name')
         'latestPosts' => $latestPosts, // Sekarang variabel ini sudah ada isinya
     ]);
 })->name('welcome');
+
+// 🔥 PERBAIKAN: Route ini dipindahkan ke area Public karena dipanggil saat user belum login (Register)
+Route::post('/payment/create-token', [PaymentController::class, 'createToken'])->name('payment.token');
+
 
 /*
 |--------------------------------------------------------------------------

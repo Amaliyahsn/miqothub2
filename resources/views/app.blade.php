@@ -6,8 +6,6 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
-        <!-- <link rel="icon" type="image/png" href="{{ asset('logo4.png') }}"> -->
-
         <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
         <link rel="alternate icon" href="/favicon.ico">
         <link rel="apple-touch-icon" href="/favicon.svg">
@@ -21,6 +19,11 @@
         @viteReactRefresh
         @vite(['resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead
+
+        <script type="text/javascript" 
+                src="https://app.sandbox.midtrans.com/snap/snap.js" 
+                data-client-key="{{ config('services.midtrans.client_key') ?? env('MIDTRANS_CLIENT_KEY') }}">
+        </script>
     </head>
     <body class="font-sans antialiased">
         @inertia

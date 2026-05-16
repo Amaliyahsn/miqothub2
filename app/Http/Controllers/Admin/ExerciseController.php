@@ -19,7 +19,6 @@ class ExerciseController extends Controller
 
     public function show(Exercise $exercise)
     {
-        
         $exercise->load([
             'questions' => function ($query) { $query->orderBy('urutan', 'asc'); },
             'materials.chapter' 
@@ -36,9 +35,6 @@ class ExerciseController extends Controller
         ]);
     }
 
-    
-    
-    
     public function update(Request $request, Exercise $exercise)
     {
         $request->validate([
@@ -60,7 +56,6 @@ class ExerciseController extends Controller
         return back()->with('success', 'Pengaturan Kuis/Latihan berhasil diperbarui!');
     }
 
-    
     private function uploadImage($request, $fieldName, $oldPath = null)
     {
         if ($request->hasFile($fieldName)) {
@@ -70,16 +65,16 @@ class ExerciseController extends Controller
         return $oldPath; 
     }
 
-    
-    
-    
     public function storeQuestion(Request $request, Exercise $exercise)
     {
         $request->validate([
             'pertanyaan' => 'required|string',
             'jawaban_benar' => 'required|in:a,b,c,d,e',
-            'opsi_a' => 'required|string', 'opsi_b' => 'required|string',
-            'opsi_c' => 'required|string', 'opsi_d' => 'required|string', 'opsi_e' => 'required|string',
+            'opsi_a' => 'required|string', 
+            'opsi_b' => 'required|string',
+            'opsi_c' => 'nullable|string', 
+            'opsi_d' => 'nullable|string', 
+            'opsi_e' => 'nullable|string',
             
             'gambar_soal' => 'nullable|image|max:2048',
             'gambar_a' => 'nullable|image|max:2048', 'gambar_b' => 'nullable|image|max:2048',
@@ -88,12 +83,15 @@ class ExerciseController extends Controller
 
         $data = $request->all();
         
+        // 💡 PERBAIKAN: Paksa nilai null menjadi string kosong agar database MySQL tidak error
+        $data['opsi_c'] = $request->opsi_c ?? '';
+        $data['opsi_d'] = $request->opsi_d ?? '';
+        $data['opsi_e'] = $request->opsi_e ?? '';
         
         $maxUrutan = $exercise->questions()->max('urutan');
         $data['urutan'] = $maxUrutan ? $maxUrutan + 1 : 1;
         $data['exercise_id'] = $exercise->id;
 
-        
         $fields = ['gambar_soal', 'gambar_a', 'gambar_b', 'gambar_c', 'gambar_d', 'gambar_e'];
         foreach ($fields as $field) {
             $data[$field] = $this->uploadImage($request, $field);
@@ -103,16 +101,17 @@ class ExerciseController extends Controller
         return back()->with('success', 'Soal berhasil ditambahkan!');
     }
 
-    
-    
-    
     public function updateQuestion(Request $request, Question $question)
     {
         $request->validate([
             'pertanyaan' => 'required|string',
             'jawaban_benar' => 'required|in:a,b,c,d,e',
-            'opsi_a' => 'required|string', 'opsi_b' => 'required|string',
-            'opsi_c' => 'required|string', 'opsi_d' => 'required|string', 'opsi_e' => 'required|string',
+            'opsi_a' => 'required|string', 
+            'opsi_b' => 'required|string',
+            'opsi_c' => 'nullable|string', 
+            'opsi_d' => 'nullable|string', 
+            'opsi_e' => 'nullable|string',
+            
             'gambar_soal' => 'nullable|image|max:2048',
             'gambar_a' => 'nullable|image|max:2048', 'gambar_b' => 'nullable|image|max:2048',
             'gambar_c' => 'nullable|image|max:2048', 'gambar_d' => 'nullable|image|max:2048', 'gambar_e' => 'nullable|image|max:2048',
@@ -120,16 +119,19 @@ class ExerciseController extends Controller
 
         $data = $request->except(['_method', 'remove_gambar_soal', 'remove_gambar_a', 'remove_gambar_b', 'remove_gambar_c', 'remove_gambar_d', 'remove_gambar_e']);
 
+        // 💡 PERBAIKAN: Paksa nilai null menjadi string kosong agar database MySQL tidak error
+        $data['opsi_c'] = $request->opsi_c ?? '';
+        $data['opsi_d'] = $request->opsi_d ?? '';
+        $data['opsi_e'] = $request->opsi_e ?? '';
+
         $fields = ['gambar_soal', 'gambar_a', 'gambar_b', 'gambar_c', 'gambar_d', 'gambar_e'];
         foreach ($fields as $field) {
-            
             $removeField = 'remove_' . $field;
             
             if ($request->$removeField == 'true' || $request->$removeField == 1) {
                 if ($question->$field) Storage::disk('public')->delete($question->$field);
                 $data[$field] = null;
             } else {
-                
                 $data[$field] = $this->uploadImage($request, $field, $question->$field);
             }
         }
@@ -138,12 +140,8 @@ class ExerciseController extends Controller
         return back()->with('success', 'Soal berhasil diperbarui!');
     }
 
-    
-    
-    
     public function reorderQuestions(Request $request, Exercise $exercise)
     {
-        
         $request->validate([
             'ordered_ids' => 'required|array',
         ]);
@@ -155,12 +153,8 @@ class ExerciseController extends Controller
         return back()->with('success', 'Urutan soal berhasil diperbarui!');
     }
 
-    
-    
-    
     public function destroyQuestion(Question $question)
     {
-        
         $fields = ['gambar_soal', 'gambar_a', 'gambar_b', 'gambar_c', 'gambar_d', 'gambar_e'];
         foreach ($fields as $field) {
             if ($question->$field) Storage::disk('public')->delete($question->$field);
