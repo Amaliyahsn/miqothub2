@@ -388,7 +388,7 @@ const [selectedPost, setSelectedPost] = useState(null);
     </div>
 </section>
 
-          {/* Section Program Kelas */}
+{/* Section Program Kelas */}
 <section
     id="pricelist"
     className="relative z-10 pt-8 pb-16 md:pt-12 md:pb-24 bg-[#F8FAFC] overflow-hidden"
@@ -410,12 +410,11 @@ const [selectedPost, setSelectedPost] = useState(null);
                     Program Kelas
                 </motion.h2>
                 <motion.p
-    variants={fadeUpVariant}
-    // Ganti max-w-2xl menjadi max-w-none agar teks memanjang ke kanan
-    className="text-slate-500 text-sm sm:text-base max-w-none"
->
-    Pilih program komprehensif yang dirancang khusus untuk meningkatkan skill Anda secara sistematis.
-</motion.p>
+                    variants={fadeUpVariant}
+                    className="text-slate-500 text-sm sm:text-base max-w-none"
+                >
+                    Pilih program komprehensif yang dirancang khusus untuk meningkatkan skill Anda secara sistematis.
+                </motion.p>
             </div>
             {/* Indikator Geser (Hanya Muncul di Mobile) */}
             <div className="md:hidden flex items-center gap-2 text-blue-600 text-xs font-bold animate-pulse">
@@ -473,14 +472,14 @@ const [selectedPost, setSelectedPost] = useState(null);
 
                                 {/* Harga Section */}
                                 <div className="mb-6 flex flex-col gap-1 p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
-                                    {course.harga_coret > 0 && (
+                                    {Number(course.harga || 0) > 0 && (
                                         <span className="text-xs font-bold text-slate-400 line-through">
-                                            {formatRupiah(course.harga_coret)}
+                                            {formatRupiah(course.harga)}
                                         </span>
                                     )}
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-2xl font-black text-blue-600">
-                                            {formatRupiah(course.harga)}
+                                            {formatRupiah(course.harga_coret)}
                                         </span>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase">/ Program</span>
                                     </div>
@@ -532,7 +531,6 @@ const [selectedPost, setSelectedPost] = useState(null);
         )}
     </motion.div>
 </section>
-
 <section
     id="fitur"
     /* Dikurangi dari py-16/24 menjadi py-10 md:py-14 untuk merapatkan jarak antar section */
@@ -992,111 +990,111 @@ const [selectedPost, setSelectedPost] = useState(null);
             </a>
 
             <AnimatePresence>
-    {selectedCourse && (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-6">
-            
-            {/* BACKDROP */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+{selectedCourse && (
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-6">
+        
+        {/* BACKDROP */}
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedCourse(null)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        />
+
+        {/* MODAL */}
+        <motion.div
+            initial={{ y: "100%", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "100%", opacity: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="relative w-full sm:max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+        >
+            {/* CLOSE BUTTON */}
+            <button
                 onClick={() => setSelectedCourse(null)}
-                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            />
-
-            {/* MODAL */}
-            <motion.div
-                initial={{ y: "100%", opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: "100%", opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="relative w-full sm:max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+                className="absolute top-4 right-4 z-50 p-2 bg-slate-100 hover:bg-slate-900 text-slate-600 hover:text-white rounded-full transition"
             >
-                {/* CLOSE BUTTON */}
-                <button
-                    onClick={() => setSelectedCourse(null)}
-                    className="absolute top-4 right-4 z-50 p-2 bg-slate-100 hover:bg-slate-900 text-slate-600 hover:text-white rounded-full transition"
-                >
-                    <X size={20} />
-                </button>
+                <X size={20} />
+            </button>
 
-                {/* IMAGE */}
-                <div className="h-52 bg-slate-100">
-                    {selectedCourse.thumbnail_url ? (
-                        <img
-                            src={selectedCourse.thumbnail_url}
-                            className="w-full h-full object-cover"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                            <BookOpen className="text-slate-300" size={40} />
-                        </div>
-                    )}
-                </div>
+            {/* IMAGE */}
+            <div className="h-52 bg-slate-100">
+                {selectedCourse.thumbnail_url ? (
+                    <img
+                        src={selectedCourse.thumbnail_url}
+                        className="w-full h-full object-cover"
+                    />
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="text-slate-300" size={40} />
+                    </div>
+                )}
+            </div>
 
-                {/* CONTENT */}
-                <div className="p-6 sm:p-8">
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">
-                        {selectedCourse.nama}
-                    </h2>
-                   <div
+            {/* CONTENT */}
+            <div className="p-6 sm:p-8">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">
+                    {selectedCourse.nama}
+                </h2>
+                <div
                     className="text-slate-600 text-sm leading-relaxed mb-4"
                     dangerouslySetInnerHTML={{ __html: selectedCourse.deskripsi }}
                 ></div>
 
-                    <p className="text-slate-500 text-sm mb-4">
-                        {selectedCourse.batch}
-                    </p>
+                <p className="text-slate-500 text-sm mb-4">
+                    {selectedCourse.batch}
+                </p>
 
-                    {/* HARGA */}
-                    <div className="mb-5">
-                        {selectedCourse.harga_coret > 0 && (
-                            <div className="text-sm text-slate-400 line-through">
-                                {formatRupiah(selectedCourse.harga_coret)}
-                            </div>
-                        )}
-                        <div className="text-2xl font-black text-blue-600">
+                {/* HARGA */}
+                <div className="mb-5">
+                    {Number(selectedCourse.harga || 0) > 0 && (
+                        <div className="text-sm text-slate-400 line-through">
                             {formatRupiah(selectedCourse.harga)}
                         </div>
+                    )}
+                    <div className="text-2xl font-black text-blue-600">
+                        {formatRupiah(selectedCourse.harga_coret)}
                     </div>
-
-                    {/* FITUR FULL */}
-                    <div className="space-y-2 mb-6">
-                        {(() => {
-                            let fiturList = [];
-                            try {
-                                fiturList =
-                                    typeof selectedCourse.fitur === "string"
-                                        ? JSON.parse(selectedCourse.fitur)
-                                        : selectedCourse.fitur || [];
-                            } catch {
-                                fiturList = [];
-                            }
-
-                            return fiturList.map((item, i) => (
-                                <div key={i} className="flex gap-2 text-sm text-slate-600">
-                                    <CheckCircle2 size={16} className="text-blue-600 mt-0.5" />
-                                    {item}
-                                </div>
-                            ));
-                        })()}
-                    </div>
-
-                    {/* CTA */}
-                    <Link
-                        href={
-                            auth?.user
-                                ? route("member.catalog")
-                                : route("register")
-                        }
-                        className="block w-full text-center py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition"
-                    >
-                        Daftar Sekarang
-                    </Link>
                 </div>
-            </motion.div>
-        </div>
-    )}
+
+                {/* FITUR FULL */}
+                <div className="space-y-2 mb-6">
+                    {(() => {
+                        let fiturList = [];
+                        try {
+                            fiturList =
+                                typeof selectedCourse.fitur === "string"
+                                    ? JSON.parse(selectedCourse.fitur)
+                                    : selectedCourse.fitur || [];
+                        } catch {
+                            fiturList = [];
+                        }
+
+                        return fiturList.map((item, i) => (
+                            <div key={i} className="flex gap-2 text-sm text-slate-600">
+                                <CheckCircle2 size={16} className="text-blue-600 mt-0.5" />
+                                {item}
+                            </div>
+                        ));
+                    })()}
+                </div>
+
+                {/* CTA */}
+                <Link
+                    href={
+                        auth?.user
+                            ? route("member.catalog")
+                            : route("register")
+                    }
+                    className="block w-full text-center py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition"
+                >
+                    Daftar Sekarang
+                </Link>
+            </div>
+        </motion.div>
+    </div>
+)}
 </AnimatePresence>
 <AnimatePresence>
   {selectedPost && (

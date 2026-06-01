@@ -26,13 +26,15 @@ export default function Show({ auth, exercise, scores }) {
     const [isReordering, setIsReordering] = useState(false);
 
     // Form Pengaturan Kuis
-    const formSettings = useForm({
-        judul: exercise.judul || '',
-        deskripsi: exercise.deskripsi || '',
-        password: exercise.password || '',
-        waktu_menit: exercise.waktu_menit || 30, 
-        is_active: exercise.is_active === 1 || exercise.is_active === true,
-    });
+    // 1. Pastikan inisialisasi default menghandle angka 0 dengan benar
+const formSettings = useForm({
+    judul: exercise.judul || '',
+    deskripsi: exercise.deskripsi || '',
+    password: exercise.password || '',
+    // Jika dari backend bernilai 0 atau null/undefined, biarkan default 0 (tidak dibatasi)
+    waktu_menit: exercise.waktu_menit !== undefined && exercise.waktu_menit !== null ? exercise.waktu_menit : 0, 
+    is_active: exercise.is_active === 1 || exercise.is_active === true,
+});
 
     const submitSettings = (e) => {
         e.preventDefault();
@@ -304,9 +306,44 @@ export default function Show({ auth, exercise, scores }) {
                                         <input type="text" value={formSettings.data.password} onChange={e => formSettings.setData('password', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 font-medium text-slate-800 shadow-sm outline-none transition-colors" placeholder="Kosong = Tanpa" />
                                     </div>
                                     <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5"><Clock size={12}/> Waktu (Menit)</label>
-                                        <input type="number" min="1" value={formSettings.data.waktu_menit} onChange={e => formSettings.setData('waktu_menit', e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 font-medium text-slate-800 text-center shadow-sm outline-none transition-colors" required />
-                                    </div>
+    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+        <Clock size={12}/> Waktu Latihan
+    </label>
+    <div className="relative flex items-center">
+        <input 
+            type="number" 
+            min="0" // Diubah dari 1 ke 0 agar nilai 0 diizinkan oleh browser
+            value={formSettings.data.waktu_menit} 
+            onChange={e => {
+                // Konversi string ke integer. Jika kosong, default ke 0
+                const val = e.target.value === '' ? '' : parseInt(e.target.value);
+                formSettings.setData('waktu_menit', val);
+            }} 
+            className="w-full pl-4 pr-24 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 font-bold text-slate-800 text-left shadow-sm outline-none transition-colors" 
+            placeholder="Contoh: 30"
+            required 
+        />
+        {/* Indikator Teks Dinamis di dalam Input */}
+        <div className="absolute right-3 pointer-events-none select-none">
+            {parseInt(formSettings.data.waktu_menit) === 0 ? (
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                    Tanpa Batas
+                </span>
+            ) : (
+                <span className="text-xs font-bold text-slate-400 mr-1">
+                    Menit
+                </span>
+            )}
+        </div>
+    </div>
+    {/* Info Text Tambahan */}
+    <p className="text-[11px] text-slate-400 mt-1.5 font-medium">
+        <strong className="text-slate-600">0</strong> soal tidak dibatasi waktu.
+    </p>
+    {formSettings.errors.waktu_menit && (
+        <div className="text-rose-500 text-xs font-semibold mt-1">{formSettings.errors.waktu_menit}</div>
+    )}
+</div>
                                 </div>
 
                                 <div>

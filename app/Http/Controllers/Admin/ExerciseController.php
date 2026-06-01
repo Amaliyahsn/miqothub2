@@ -42,7 +42,7 @@ class ExerciseController extends Controller
             'deskripsi' => 'nullable|string',
             'password' => 'nullable|string|max:50',
             'is_active' => 'boolean',
-            'waktu_menit' => 'required|integer|min:1', 
+            'waktu_menit' => 'required|integer|min:0', 
         ]);
 
         $exercise->update([

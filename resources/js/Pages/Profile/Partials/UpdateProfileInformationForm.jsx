@@ -14,6 +14,7 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
     const { data, setData, post, errors, processing, recentlySuccessful } = useForm({
         name: user.name,
         email: user.email,
+        phone: user.phone || '', // ✅ Diubah menjadi phone
         pekerjaan: user.pekerjaan || '',
         umur: user.umur || '',
         alamat: user.alamat || '',
@@ -32,7 +33,6 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
 
     const submit = (e) => {
         e.preventDefault();
-        // Paksa sebagai form data agar file terkirim
         post(route('profile.update'), {
             forceFormData: true,
             preserveScroll: true,
@@ -81,9 +81,16 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
                         <InputError className="mt-2" message={errors.email} />
                     </div>
 
+                    {/* ✅ Diubah menjadi phone */}
+                    <div>
+                        <InputLabel htmlFor="phone" value="Nomor Telepon / WA" className="text-blue-950 font-black uppercase text-[10px] tracking-widest mb-1.5" />
+                        <TextInput id="phone" type="tel" className={inputStyle} value={data.phone} onChange={(e) => setData('phone', e.target.value)} required placeholder="Contoh: 08123456789" autoComplete="tel" />
+                        <InputError className="mt-2" message={errors.phone} />
+                    </div>
+
                     <div>
                         <InputLabel htmlFor="pekerjaan" value="Pekerjaan" className="text-blue-950 font-black uppercase text-[10px] tracking-widest mb-1.5" />
-                        <TextInput id="pekerjaan" className={inputStyle} value={data.pekerjaan} onChange={(e) => setData('pekerjaan', e.target.value)} placeholder="Contoh: Pegawai Swasta" />
+                        <TextInput id="pekerjaan" type="text" className={inputStyle} value={data.pekerjaan} onChange={(e) => setData('pekerjaan', e.target.value)} placeholder="Contoh: Pegawai Swasta" autoComplete="organization-title" />
                         <InputError className="mt-2" message={errors.pekerjaan} />
                     </div>
 

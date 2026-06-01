@@ -6,18 +6,9 @@ import { FileText, X, Save } from 'lucide-react';
 export default function MaterialModal({ show, onClose, chapterId, material, nextOrder }) {
     const { data, setData, post, processing, reset, errors } = useForm({
         judul: '', tipe: 'video', deskripsi: '', 
-        link_video: '', file_path: null, durasi: '', 
-        is_preview: false, urutan: 1, _method: 'post',
-        tanggal_waktu_meet: '', link_meet: '', password_meet: '',
-        deadline_latihan: ''
+        link_video: '', file_path: null, 
+        is_preview: false, urutan: 1, _method: 'post'
     });
-
-    const formatDateTimeLocal = (dateString) => {
-        if (!dateString) return '';
-        const d = new Date(dateString);
-        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-        return d.toISOString().slice(0, 16);
-    };
 
     useEffect(() => {
         if (show) {
@@ -28,20 +19,14 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                     deskripsi: material.deskripsi || '',
                     link_video: material.link_video || '', 
                     file_path: null, 
-                    durasi: material.durasi || '',
                     is_preview: material.is_preview ? true : false, 
                     urutan: material.urutan, 
-                    _method: 'put',
-                    tanggal_waktu_meet: formatDateTimeLocal(material.tanggal_waktu_meet),
-                    link_meet: material.link_meet || '',
-                    password_meet: material.password_meet || '',
-                    deadline_latihan: '' 
+                    _method: 'put'
                 });
             } else {
                 setData({
                     judul: '', tipe: 'video', deskripsi: '', link_video: '', file_path: null,
-                    durasi: '', is_preview: false, urutan: nextOrder, _method: 'post',
-                    tanggal_waktu_meet: '', link_meet: '', password_meet: '', deadline_latihan: ''
+                    is_preview: false, urutan: nextOrder, _method: 'post'
                 });
             }
         } else {
@@ -49,7 +34,6 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
         }
     }, [show, material]);
 
-    // Mengarahkan data ke rute yang benar sesuai Tipe
     const submit = (e) => {
         e.preventDefault();
         
@@ -58,9 +42,7 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
         if (material) {
             targetRoute = route('admin.materials.update', material.id);
         } else {
-            if (data.tipe === 'pertemuan') {
-                targetRoute = route('admin.meetings.store', chapterId);
-            } else if (data.tipe === 'latihan') {
+            if (data.tipe === 'latihan') {
                 targetRoute = route('admin.exercises.store', chapterId);
             } else {
                 targetRoute = route('admin.materials.store', chapterId);
@@ -83,7 +65,6 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
                     />
                     
-                    
                     <motion.div 
                         initial={{ scale: 0.95, opacity: 0, y: 15 }} 
                         animate={{ scale: 1, opacity: 1, y: 0 }} 
@@ -105,19 +86,9 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                             </button>
                         </div>
 
-                        
                         <form onSubmit={submit} className="flex-1 overflow-y-auto scrollbar-thin bg-white flex flex-col">
                             <div className="p-6 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                    <div className="md:col-span-2">
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Judul Materi</label>
-                                        <input 
-                                            type="text" value={data.judul} onChange={e => setData('judul', e.target.value)} 
-                                            className="w-full px-4 py-3 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-bold text-slate-800 shadow-sm outline-none transition-colors" 
-                                            required 
-                                        />
-                                    </div>
-                                    
                                     <div>
                                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tipe Materi</label>
                                         <select 
@@ -126,30 +97,29 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                                         >
                                             <option value="video">Video (YouTube/Drive)</option>
                                             <option value="pdf">File PDF</option>
-                                            <option value="text_only">Teks Bacaan Saja</option>
-                                            <option value="pertemuan">Sesi Pertemuan (Live/Zoom)</option>
                                             <option value="latihan">Latihan / Tugas</option>
                                         </select>
                                     </div>
 
                                     <div>
-                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Urutan & Estimasi Durasi</label>
-                                        <div className="flex gap-3">
-                                            <input 
-                                                type="number" value={data.urutan} onChange={e => setData('urutan', e.target.value)} 
-                                                className="w-20 px-3 py-3 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm text-center font-bold text-slate-800 shadow-sm outline-none transition-colors" 
-                                                title="Urutan" required min="1"
-                                            />
-                                            <input 
-                                                type="text" value={data.durasi} onChange={e => setData('durasi', e.target.value)} 
-                                                className="flex-1 px-4 py-3 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors" 
-                                                placeholder="Cth: 15 Menit" 
-                                            />
-                                        </div>
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Urutan Materi</label>
+                                        <input 
+                                            type="number" value={data.urutan} onChange={e => setData('urutan', e.target.value)} 
+                                            className="w-full px-4 py-3 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-bold text-slate-800 shadow-sm outline-none transition-colors" 
+                                            title="Urutan" required min="1"
+                                        />
+                                    </div>
+
+                                    <div className="md:col-span-2">
+                                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Judul Materi</label>
+                                        <input 
+                                            type="text" value={data.judul} onChange={e => setData('judul', e.target.value)} 
+                                            className="w-full px-4 py-3 rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 text-sm font-bold text-slate-800 shadow-sm outline-none transition-colors" 
+                                            required 
+                                        />
                                     </div>
                                 </div>
 
-                                
                                 {data.tipe === 'video' && (
                                     <div className="p-5 bg-blue-50 border border-blue-200/60 rounded-2xl shadow-sm">
                                         <label className="block text-[10px] font-bold text-blue-800 uppercase tracking-widest mb-2">Link URL Video</label>
@@ -165,25 +135,6 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                                     </div>
                                 )}
 
-                                {data.tipe === 'pertemuan' && (
-                                    <div className="p-5 bg-violet-50 border border-violet-200/60 rounded-2xl space-y-4 shadow-sm">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-violet-800 uppercase tracking-widest mb-2">Link Zoom / Meet</label>
-                                                <input type="url" value={data.link_meet} onChange={e => setData('link_meet', e.target.value)} className="w-full px-4 py-3 rounded-xl border-violet-200 bg-white text-sm font-medium focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-colors" placeholder="https://zoom.us/j/..." required />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-violet-800 uppercase tracking-widest mb-2">Tanggal & Waktu</label>
-                                                <input type="datetime-local" value={data.tanggal_waktu_meet} onChange={e => setData('tanggal_waktu_meet', e.target.value)} className="w-full px-4 py-3 rounded-xl border-violet-200 bg-white text-sm font-medium focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-colors cursor-pointer" required />
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[10px] font-bold text-violet-800 uppercase tracking-widest mb-2">Password / Passcode (Opsional)</label>
-                                            <input type="text" value={data.password_meet} onChange={e => setData('password_meet', e.target.value)} className="w-full px-4 py-3 rounded-xl border-violet-200 bg-white text-sm font-medium focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition-colors" placeholder="Contoh: 123456" />
-                                        </div>
-                                    </div>
-                                )}
-
                                 {data.tipe === 'latihan' && (
                                     <div className="p-5 bg-amber-50 border border-amber-200/60 rounded-2xl shadow-sm">
                                         <div className="bg-amber-100/50 text-amber-800 p-4 rounded-xl text-sm font-medium border border-amber-200/50">
@@ -192,7 +143,6 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                                     </div>
                                 )}
 
-                                
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Deskripsi Tambahan / Catatan</label>
                                     <textarea 
@@ -202,7 +152,6 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                                     ></textarea>
                                 </div>
 
-                                
                                 <label className="flex items-center gap-4 p-4 bg-slate-50 hover:bg-blue-50 rounded-2xl border border-slate-200 hover:border-blue-200 cursor-pointer transition-colors group shadow-sm">
                                     <div className="relative flex items-center">
                                         <input 
@@ -217,7 +166,6 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                                 </label>
                             </div>
 
-                            
                             <div className="px-6 py-5 border-t border-slate-100 bg-[#F8FAFC] flex justify-end gap-3 shrink-0">
                                 <button 
                                     type="button" onClick={onClose} 

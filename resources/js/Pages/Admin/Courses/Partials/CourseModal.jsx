@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Upload, Save, Type, FileText, DollarSign, Users, Calendar, Link as LinkIcon, CheckSquare, Plus, Trash2, Tag, CalendarOff } from 'lucide-react';
+import { X, Upload, Save, Type, FileText, DollarSign, Users, Calendar, Link as LinkIcon, CheckSquare, Plus, Trash2, Tag, CalendarOff, Percent } from 'lucide-react';
 
 export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
     const [preview, setPreview] = useState(null);
+    
+    // State tambahan untuk tipe diskon dan nilai input admin
+    const [tipeDiskon, setTipeDiskon] = useState('nominal'); // 'nominal' atau 'persen'
+    const [nilaiDiskon, setNilaiDiskon] = useState(''); // Nilai input diskon (bisa Rp atau %)
 
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         nama: '', deskripsi: '', harga: '', harga_coret: '', batch: '', 
@@ -12,6 +16,19 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
         fitur: [''], 
         thumbnail: null, _method: 'post',
     });
+
+    // Fungsi utilitas untuk menghitung harga akhir berdasarkan tipe diskon
+    const hitungHargaAkhir = (hargaAsli, tipe, nilai) => {
+        const asli = Number(hargaAsli) || 0;
+        const n = Number(nilai) || 0;
+        
+        if (tipe === 'persen') {
+            const potongan = (asli * n) / 100;
+            return String(Math.round(asli - potongan));
+        } else {
+            return String(Math.round(asli - n));
+        }
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -28,8 +45,20 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                     thumbnail: null, _method: 'put',
                 });
                 setPreview(course.thumbnail_url);
+
+                // Tarik nilai selisih untuk edit mode (Default ke nominal potongan)
+                if (course.harga && course.harga_coret) {
+                    setTipeDiskon('nominal');
+                    setNilaiDiskon(String(Math.round(Number(course.harga) - Number(course.harga_coret))));
+                } else {
+                    setNilaiDiskon('');
+                }
             } else {
-                reset(); setData('_method', 'post'); setPreview(null);
+                reset(); 
+                setData('_method', 'post'); 
+                setPreview(null);
+                setTipeDiskon('nominal');
+                setNilaiDiskon('');
             }
         }
     }, [isOpen, isEditMode, course]);
@@ -153,25 +182,86 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             <div className="p-1.5 bg-blue-100/50 text-blue-600 rounded-lg">
                                                 <Tag size={18} />
                                             </div>
-                                            <h3 className="font-black text-slate-800">Pengaturan Kelas</h3>
+                                            <h3 className="font-black text-slate-800">Pengaturan Kelas & Diskon</h3>
                                         </div>
 
+                                        {/* Kolom Input Harga Asli */}
+                                        <div>
+                                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Harga Asli / Harga Coret (Rp)</label>
+                                            <div className="relative">
+                                                <p className="absolute top-3.5 font-semibold text-xs left-3 text-slate-400">Rp.   </p>
+                                                <input 
+                                                    type="number" 
+                                                    value={data.harga} 
+                                                    onChange={e => {
+                                                        const hargaAsli = e.target.value;
+                                                        const hargaFinal = hitungHargaAkhir(hargaAsli, tipeDiskon, nilaiDiskon);
+                                                        setData(prev => ({
+                                                            ...prev,
+                                                            harga: hargaAsli,
+                                                            harga_coret: hargaFinal
+                                                        }));
+                                                    }} 
+                                                    className="pl-9 w-full rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 py-3 text-sm font-black text-slate-900 shadow-sm outline-none transition-colors" 
+                                                    placeholder="0" 
+                                                    required 
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Pilihan Metode Diskon */}
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Harga Jual (Rp)</label>
-                                                <div className="relative">
-                                                    <p className="absolute top-3.5 font-semibold text-xs left-3 text-slate-400">Rp.   </p>
-                                                    <input type="number" value={data.harga} onChange={e => setData('harga', e.target.value)} className="pl-9 w-full rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 py-3 text-sm font-black text-slate-900 shadow-sm outline-none transition-colors" placeholder="0" required />
-                                                </div>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Skema Diskon</label>
+                                                <select 
+                                                    value={tipeDiskon} 
+                                                    onChange={e => {
+                                                        const tipe = e.target.value;
+                                                        setTipeDiskon(tipe);
+                                                        setNilaiDiskon('');
+                                                        setData('harga_coret', data.harga || '');
+                                                    }}
+                                                    className="w-full rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 py-3 px-3 text-sm font-bold shadow-sm outline-none transition-colors cursor-pointer appearance-none"
+                                                >
+                                                    <option value="nominal">Potongan (Rp)</option>
+                                                    <option value="persen">Persentase (%)</option>
+                                                </select>
                                             </div>
                                             <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Harga Coret</label>
+                                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                                    {tipeDiskon === 'persen' ? 'Diskon (%)' : 'Potongan Harga (Rp)'}
+                                                </label>
                                                 <div className="relative">
-                                                    <p className="absolute top-3.5 font-semibold text-xs left-3 text-slate-300">Rp.   </p>
-                                                    <input type="number" value={data.harga_coret} onChange={e => setData('harga_coret', e.target.value)} className="pl-9 w-full rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 py-3 text-sm font-bold text-slate-400 line-through shadow-sm outline-none transition-colors" placeholder="0" />
+                                                    {tipeDiskon === 'nominal' ? (
+                                                        <p className="absolute top-3.5 font-semibold text-xs left-3 text-slate-400">Rp. </p>
+                                                    ) : (
+                                                        <Percent size={14} className="absolute top-4 left-3 text-slate-400" />
+                                                    )}
+                                                    <input 
+                                                        type="number" 
+                                                        value={nilaiDiskon} 
+                                                        onChange={e => {
+                                                            const nilai = e.target.value;
+                                                            setNilaiDiskon(nilai);
+                                                            const hargaFinal = hitungHargaAkhir(data.harga, tipeDiskon, nilai);
+                                                            setData('harga_coret', hargaFinal);
+                                                        }} 
+                                                        className="pl-9 w-full rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 py-3 text-sm font-bold text-rose-600 shadow-sm outline-none transition-colors" 
+                                                        placeholder="0" 
+                                                    />
                                                 </div>
                                             </div>
                                         </div>
+
+                                        {/* Preview Harga Akhir yang Live & Otomatis Bulat */}
+                                        {data.harga_coret && (
+                                            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Harga Tampilan Akhir (Dashboard):</p>
+                                                <p className="text-lg font-black text-emerald-700 mt-0.5">
+                                                    Rp {Number(data.harga_coret).toLocaleString('id-ID')}
+                                                </p>
+                                            </div>
+                                        )}
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
@@ -204,7 +294,6 @@ export default function CourseModal({ isOpen, onClose, isEditMode, course }) {
                                             </div>
                                         </div>
 
-                                        {/* TAMBAHAN BARU: TANGGAL SELESAI / EXPIRED */}
                                         <div className="grid grid-cols-1">
                                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Tanggal Selesai</label>
                                             <div className="relative">

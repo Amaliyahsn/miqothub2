@@ -2,30 +2,38 @@ import { useEffect, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
-import { 
-    User, Mail, Lock, MapPin, Briefcase, Heart, 
-    ArrowLeft, Upload, CheckSquare, Receipt, CalendarDays, 
-    Sparkles, Phone, ChevronDown, Copy, Check, ArrowRight, 
-    LayoutGrid, CheckCircle2, ShieldCheck, CreditCard
+import {
+    User, Mail, Lock, MapPin, Briefcase,
+    ArrowLeft, CheckSquare, Sparkles, Phone,
+    ArrowRight, LayoutGrid, CheckCircle2, ShieldCheck,
+    CreditCard, Eye, EyeOff
 } from 'lucide-react';
 
 export default function Register({ courses }) {
     const { app_settings = {}, auth } = usePage().props;
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '', email: '', alamat: '', pekerjaan: '', umur: null, status: '',
-        password: '', password_confirmation: '',
+        name: '', 
+        email: '', 
+        alamat: '', 
+        pekerjaan: '', 
+        umur: '', 
+        status: '',
+        password: '', 
+        password_confirmation: '',
         course_ids: [], 
+        phone: '', 
         midtrans_order_id: '',
         midtrans_status: '',
     });
 
     const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-    // Memuat Script Snap Midtrans secara otomatis saat halaman dibuka
     useEffect(() => {
-        const midtransScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js"; // Ganti URL jika sudah Production live
-        const clientKey = "Mid-client-P-0tdyOcjZ6HxNXs"; // Kredensial Client Key milikmu
+        const midtransScriptUrl = "https://app.midtrans.com/snap/snap.js";
+        const clientKey = "Mid-client-bV-Nc4CgcTvTgU24";
 
         const script = document.createElement('script');
         script.src = midtransScriptUrl;
@@ -65,7 +73,8 @@ export default function Register({ courses }) {
             const response = await axios.post(route('payment.token'), {
                 amount: totalPrice,
                 name: data.name,
-                email: data.email
+                email: data.email,
+                phone: data.phone || '-'
             });
 
             const snapToken = response.data.snap_token;
@@ -74,18 +83,25 @@ export default function Register({ courses }) {
             // 2. Memunculkan Popup Snap Midtrans
             window.snap.pay(snapToken, {
                 onSuccess: function(result) {
-                    // Perbaikan: Menggunakan object data baru agar Inertia mendeteksi perubahan state
-                    const updatedData = {
+                    // Sinkronisasi data ke instansi useForm sebelum melakukan submit data flat
+                    setData(data => ({
                         ...data,
                         midtrans_order_id: orderId,
                         midtrans_status: 'success'
-                    };
+                    }));
 
-                    // Kirim form pendaftaran lengkap beserta token sukses Midtrans ke backend
-                    post(route('register'), { 
-                        data: updatedData,
-                        preserveScroll: true,
-                        onFinish: () => setIsPaymentLoading(false)
+                    axios.post(route('register'), {
+                        ...data,
+                        midtrans_order_id: orderId,
+                        midtrans_status: 'success'
+                    })
+                    .then(() => {
+                        window.location.href = route('login');
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        alert("Gagal melakukan registrasi sistem database.");
+                        setIsPaymentLoading(false);
                     });
                 },
                 onPending: function(result) {
@@ -113,7 +129,7 @@ export default function Register({ courses }) {
 
     const activeCourses = courses.filter(course => !course.is_expired);
     const selectedCourses = courses.filter(c => data.course_ids.includes(c.id));
-    const totalPrice = selectedCourses.reduce((sum, course) => sum + course.harga, 0);
+    const totalPrice = selectedCourses.reduce((sum, course) => sum + Number(course.harga_coret || 0), 0);
 
     return (
         <div className="min-h-screen bg-[#F8FAFC] py-16 px-4 sm:px-6 lg:px-8 selection:bg-blue-500 selection:text-white overflow-x-hidden font-sans">
@@ -146,7 +162,6 @@ export default function Register({ courses }) {
                             <p className="text-slate-400 text-sm font-medium">Klik pada kartu kelas untuk memilih.</p>
                         </div>
 
-                        {/* LOGIKA FILTER & RESPONSIVE GRID/SCROLL */}
                         <div className="relative z-10 space-y-4 mb-8">
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Kelas Tersedia ({activeCourses.length})</h3>
@@ -178,7 +193,7 @@ export default function Register({ courses }) {
                                             </div>
                                             <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-700/50">
                                                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Batch {course.batch}</span>
-                                                <span className="font-black text-white">{formatRupiah(course.harga)}</span>
+                                                <span className="font-black text-white">{formatRupiah(course.harga_coret)}</span>
                                             </div>
                                         </motion.div>
                                     ))}
@@ -186,7 +201,6 @@ export default function Register({ courses }) {
                             )}
                         </div>
 
-                        {/* Payment Section - BERSIH DAN OTOMATIS */}
                         {data.course_ids.length > 0 && (
                             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="relative z-10 pt-6 mt-2 space-y-4">
                                 <div className="p-5 rounded-2xl bg-white text-slate-900 flex justify-between items-center shadow-xl">
@@ -209,7 +223,7 @@ export default function Register({ courses }) {
                             </motion.div>
                         )}
 
-                        <div className="mt-auto pt-10 text-center border-t border-slate-800/50 mt-8">
+                        <div className="mt-auto pt-10 text-center border-t border-slate-800/50">
                             <p className="text-xs font-medium text-slate-400 mb-3">Butuh bantuan pendaftaran?</p>
                             {(() => {
                                 const message = `Halo Admin MiqotHub, saya ingin bertanya mengenai pendaftaran kelas: ${selectedCourses.map(c => c.nama).join(', ') || '...'}.`;
@@ -233,8 +247,8 @@ export default function Register({ courses }) {
                     {/* RIGHT COLUMN: User Identity Form */}
                     <div className="w-full md:w-[55%] p-8 sm:p-12 bg-white">
                         <div className="mb-10">
-                            <h3 className="text-3xl font-black text-slate-900 mb-2">Identitas Diri</h3>
-                            <p className="text-slate-500 text-sm">Pastikan data sesuai untuk keperluan e-sertifikat.</p>
+                            <h3 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">Identitas Diri</h3>
+                            <p className="text-slate-500 text-sm">Pastikan data sudah benar.</p>
                         </div>
 
                         <form onSubmit={handleRegisterPayment} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -256,6 +270,16 @@ export default function Register({ courses }) {
                                 {errors.email && <p className="text-rose-500 text-[10px] font-bold mt-1 uppercase">{errors.email}</p>}
                             </div>
 
+                            {/* 🔥 PENAMBAHAN INPUT FIELD PHONE AGAR SELARAS DENGAN KONTROLER */}
+                            <div className="sm:col-span-2">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nomor WhatsApp / HP</label>
+                                <div className="relative">
+                                    <Phone size={18} className="absolute top-3.5 left-4 text-slate-400" />
+                                    <input type="text" value={data.phone} onChange={e => setData('phone', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 py-3.5 text-sm font-bold outline-none transition-all" placeholder="08xxxxxxxxxx" required />
+                                </div>
+                                {errors.phone && <p className="text-rose-500 text-[10px] font-bold mt-1 uppercase">{errors.phone}</p>}
+                            </div>
+
                             <div className="sm:col-span-2">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Alamat Domisili</label>
                                 <div className="relative">
@@ -275,7 +299,7 @@ export default function Register({ courses }) {
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Umur</label>
-                                   <input type="number" value={data.umur || ''} onChange={e => setData('umur', e.target.value ? parseInt(e.target.value) : '')} className="w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold text-center outline-none transition-all" placeholder="25" required />
+                                    <input type="number" value={data.umur} onChange={e => setData('umur', e.target.value ? parseInt(e.target.value) : '')} className="w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold text-center outline-none transition-all" placeholder="25" required />
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Status</label>
@@ -292,14 +316,44 @@ export default function Register({ courses }) {
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Password</label>
                                     <div className="relative">
                                         <Lock size={18} className="absolute top-3.5 left-4 text-slate-400" />
-                                        <input type="password" value={data.password} onChange={e => setData('password', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all" placeholder="••••••••" required />
+                                        <input
+                                                type={showPassword ? "text" : "password"}
+                                                value={data.password}
+                                                onChange={e => setData('password', e.target.value)}
+                                                className="pl-12 pr-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all"
+                                                placeholder="••••••••"
+                                                required
+                                            />
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                                            >
+                                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                     </div>
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Konfirmasi</label>
                                     <div className="relative">
                                         <CheckCircle2 size={18} className="absolute top-3.5 left-4 text-slate-400" />
-                                        <input type="password" value={data.password_confirmation} onChange={e => setData('password_confirmation', e.target.value)} className="pl-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all" placeholder="••••••••" required />
+                                        <input
+                                                type={showConfirmPassword ? "text" : "password"}
+                                                value={data.password_confirmation}
+                                                onChange={e => setData('password_confirmation', e.target.value)}
+                                                className="pl-12 pr-12 w-full rounded-2xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3.5 text-sm font-bold outline-none transition-all"
+                                                placeholder="••••••••"
+                                                required
+                                            />
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                                            >
+                                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                            </button>
                                     </div>
                                 </div>
                             </div>
@@ -316,7 +370,7 @@ export default function Register({ courses }) {
                                 </button>
 
                                 {data.course_ids.length === 0 && (
-                                    <p className="text-center text-[10px] font-bold text-rose-500 mt-4">
+                                    <p className="text-center text-rose-500 text-[10px] font-bold mt-4">
                                         Silakan pilih minimal satu kelas di kolom kiri
                                     </p>
                                 )}

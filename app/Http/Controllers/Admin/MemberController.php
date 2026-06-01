@@ -11,6 +11,7 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\MemberPaymentAccepted;
 use App\Mail\MemberRegistrationRejected; 
+use App\Mail\MemberCreated;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
@@ -48,6 +49,7 @@ class MemberController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Validasi dengan pesan error yang jelas
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email',
@@ -57,29 +59,46 @@ class MemberController extends Controller
             'alamat' => 'nullable|string',
             'status' => 'nullable|in:menikah,belum',
             'status_akun' => 'required|in:pending,aktif,suspen',
-            'course_id' => 'nullable|exists:courses,id', 
+            'course_id' => 'nullable|exists:courses,id',
+            // Pastikan field phone ada di sini jika di model User/Database Anda bersifat required
+            'phone' => 'nullable|string|max:20', 
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => 'member',
-            'pekerjaan' => $request->pekerjaan,
-            'umur' => $request->umur,
-            'alamat' => $request->alamat,
-            'status' => $request->status,
-            'status_akun' => $request->status_akun,
-        ]);
+        try {
+            // 2. Bungkus dalam Database Transaction agar aman
+            \DB::transaction(function () use ($request) {
+                $rawPassword = $request->password;
 
-        // Jika admin memilih kelas saat membuat user manual
-        if ($request->filled('course_id')) {
-            $this->enrollCourse($request, $user);
+                $user = User::create([
+                    'name' => $request->name,
+                    'email' => $request->email,
+                    'phone' => $request->phone ?? '-', // Default jika kosong
+                    'password' => Hash::make($rawPassword),
+                    'role' => 'member',
+                    'pekerjaan' => $request->pekerjaan,
+                    'umur' => $request->umur,
+                    'alamat' => $request->alamat,
+                    'status' => $request->status,
+                    'status_akun' => $request->status_akun,
+                ]);
+
+                // 3. Panggil fungsi enroll jika ada kelas
+                if ($request->filled('course_id')) {
+                    $this->enrollCourse($request, $user);
+                }
+
+                // 4. Kirim Email Notifikasi
+                Mail::to($user->email)->send(new MemberCreated($user, $rawPassword));
+            });
+
+            return back()->with('success', 'Member berhasil ditambahkan dan email akses telah dikirim.');
+
+        } catch (\Exception $e) {
+            // Jika terjadi error (misal email gagal kirim), log error-nya
+            \Log::error('Gagal tambah member: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Terjadi kesalahan sistem. Member tidak tersimpan.']);
         }
-
-        return back()->with('success', 'Member baru berhasil ditambahkan.');
     }
-
     public function verify(Request $request, User $member)
     {
         $member->update(['status_akun' => 'aktif']);

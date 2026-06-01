@@ -26,6 +26,16 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            
+            // ✅ TAMBAHKAN VALIDASI UNTUK FIELD BARU DI SINI
+            'phone' => ['required', 'string', 'max:20'],
+            'pekerjaan' => ['nullable', 'string', 'max:255'],
+            'umur' => ['nullable', 'integer', 'min:1'],
+            'alamat' => ['nullable', 'string'],
+            'status' => ['nullable', 'in:menikah,belum'],
+            
+            // ✅ Validasi agar foto yang diupload benar-benar gambar dan ukurannya aman (Maks 2MB)
+            'foto_profile' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];
     }
 }

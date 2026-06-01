@@ -64,12 +64,15 @@ export default function CourseCard({ course, index, onEdit, onDelete, formatRupi
                         {course.nama}
                     </h3>
                     <div className="flex items-end gap-3">
+                        {/* MENAMPILKAN HARGA AKHIR (SETELAH DISKON) SEBAGAI HARGA UTAMA */}
                         <span className="text-2xl font-black text-blue-300 drop-shadow-sm leading-none">
-                            {formatRupiah(course.harga)}
+                            {formatRupiah(course.harga_coret || course.harga)}
                         </span>
-                        {course.harga_coret > 0 && (
+                        
+                        {/* MENAMPILKAN HARGA ASLI SEBAGAI HARGA YANG DICORET (JIKA ADA DISKON) */}
+                        {course.harga_coret && Number(course.harga) > Number(course.harga_coret) && (
                             <span className="text-sm font-bold text-slate-300/60 line-through mb-0.5">
-                                {formatRupiah(course.harga_coret)}
+                                {formatRupiah(course.harga)}
                             </span>
                         )}
                     </div>

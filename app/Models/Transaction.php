@@ -12,13 +12,14 @@ class Transaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
-        'kode_transaksi',
-        'total_harga',
-        'bukti_pembayaran',
-        'status', // pending, verified, rejected
-        'catatan_admin'
-    ];
+    'user_id',
+    'kode_transaksi',
+    'total_harga',
+    'bukti_pembayaran',
+    'status',
+    'catatan_admin',
+    'snap_token', // <--- TAMBAHKAN INI
+];
 
     /**
      * Relasi: Transaksi ini milik siapa?

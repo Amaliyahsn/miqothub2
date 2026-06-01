@@ -1,4 +1,4 @@
-import AdminLayout from '@/Layouts/AdminLayout'; // TAMBAHAN 1: Import AdminLayout
+import AdminLayout from '@/Layouts/AdminLayout';
 import MemberLayout from '@/Layouts/MemberLayout';
 import { Head } from '@inertiajs/react';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm';
@@ -7,11 +7,10 @@ import { User, ShieldCheck, Settings } from 'lucide-react';
 
 export default function Edit({ auth, mustVerifyEmail, status }) {
     
-    // TAMBAHAN 2: Tentukan layout mana yang dipakai berdasarkan role
+    // Menentukan layout secara dinamis berdasarkan role user yang login
     const Layout = auth.user.role === 'admin' ? AdminLayout : MemberLayout;
 
     return (
-        // TAMBAHAN 3: Ganti tag <MemberLayout> menjadi <Layout>
         <Layout user={auth.user}>
             <Head title="Pengaturan Profil" />
 
@@ -26,10 +25,11 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
 
             <div className="space-y-8 pb-12">
                 
+                {/* Informasi Identitas */}
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:shadow-blue-950/5 transition-all duration-500">
                     <div className="p-6 md:p-10">
                         <div className="flex items-center gap-3 mb-8 pb-5 border-b border-slate-100">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                                 <User size={20} strokeWidth={2.5} />
                             </div>
                             <div>
@@ -45,11 +45,11 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                     </div>
                 </div>
 
-                
+                {/* Keamanan Akun */}
                 <div className="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl hover:shadow-blue-950/5 transition-all duration-500">
                     <div className="p-6 md:p-10">
                         <div className="flex items-center gap-3 mb-8 pb-5 border-b border-slate-100">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
                                 <ShieldCheck size={20} strokeWidth={2.5} />
                             </div>
                             <div>
@@ -61,6 +61,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                         <UpdatePasswordForm />
                     </div>
                 </div>
+
             </div>
         </Layout>
     );

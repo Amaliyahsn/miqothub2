@@ -18,8 +18,8 @@ export default function Catalog({ auth, courses }) {
 
     // Memuat Script Snap Midtrans secara otomatis di background
     useEffect(() => {
-        const midtransScriptUrl = "https://app.sandbox.midtrans.com/snap/snap.js";
-        const clientKey = "Mid-client-P-0tdyOcjZ6HxNXs";
+        const midtransScriptUrl = "https://app.midtrans.com/snap/snap.js";
+        const clientKey = "Mid-client-bV-Nc4CgcTvTgU24";
 
         const script = document.createElement('script');
         script.src = midtransScriptUrl;
@@ -34,6 +34,11 @@ export default function Catalog({ auth, courses }) {
     }, []);
 
     const formatRupiah = (angka) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+
+    // ✅ Fungsi helper disesuaikan dengan skema harga_coret
+    const getFinalPrice = (course) => {
+        return course.harga_coret && Number(course.harga) > Number(course.harga_coret) ? course.harga_coret : course.harga;
+    };
 
     const openModal = (course) => {
         setSelectedCourse(course);
@@ -50,16 +55,21 @@ export default function Catalog({ auth, courses }) {
         reset();
     };
 
-    // Fungsi pemicu utama popup Midtrans Snap (Sama persis dengan alur Register)
+    // Fungsi pemicu utama popup Midtrans Snap
     const handleCatalogPayment = async (e) => {
         e.preventDefault();
         setIsMidtransLoading(true);
 
+        // ✅ Pastikan amount yang dikirim ke Midtrans adalah harga final bulat (integer)
+        const amountToPay = Math.round(Number(getFinalPrice(selectedCourse)));
+
         try {
             const response = await axios.post(route('payment.token'), {
-                amount: selectedCourse.harga,
+                amount: amountToPay,
                 name: auth.user.name,
-                email: auth.user.email
+                email: auth.user.email,
+                // ✅ Tambahkan phone untuk melewati validasi backend
+                phone: auth.user.phone || auth.user.no_hp || '080000000000' 
             });
 
             const snapToken = response.data.snap_token;
@@ -67,7 +77,6 @@ export default function Catalog({ auth, courses }) {
 
             window.snap.pay(snapToken, {
                 onSuccess: function(result) {
-                    // Update data status ke form Inertia setelah user sukses bayar di simulator
                     setData(prev => ({
                         ...prev,
                         midtrans_order_id: orderId,
@@ -95,7 +104,7 @@ export default function Catalog({ auth, courses }) {
         }
     };
 
-    // Sinkronisasi Otomatis: Jika pembayaran sukses, langsung push data registrasi kelas ke backend Laravel
+    // Sinkronisasi Otomatis
     useEffect(() => {
         if (data.midtrans_status === 'success' && data.midtrans_order_id) {
             post(route('member.purchase'), {
@@ -139,6 +148,9 @@ export default function Catalog({ auth, courses }) {
                     {courses.map((course, index) => {
                         const features = Array.isArray(course.fitur) ? course.fitur : 
                                          (typeof course.fitur === 'string' ? JSON.parse(course.fitur || '[]') : []);
+                        
+                        // ✅ Validasi jika kelas memiliki harga diskon yang valid
+                        const hasDiscount = course.harga_coret && Number(course.harga) > Number(course.harga_coret);
 
                         return (
                             <motion.div 
@@ -162,6 +174,15 @@ export default function Catalog({ auth, courses }) {
                                             Batch {course.batch}
                                         </span>
                                     </div>
+                                    
+                                    {hasDiscount && (
+                                        <div className="absolute top-3 right-3 z-10">
+                                            <span className="px-3 py-1.5 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">
+                                                Promo Diskon
+                                            </span>
+                                        </div>
+                                    )}
+
                                     <div className="absolute bottom-3 left-4 right-4 z-10">
                                         <h3 className="text-lg font-black text-white leading-snug line-clamp-2">
                                             {course.nama}
@@ -170,15 +191,26 @@ export default function Catalog({ auth, courses }) {
                                 </div>
 
                                 <div className="p-4 flex-1 flex flex-col">
-                                    <div className="mb-5 flex items-end gap-2 border-b border-slate-100 pb-4">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Investasi Program</span>
+                                    <div className="mb-5 flex flex-col border-b border-slate-100 pb-4">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Investasi Program</span>
+                                        
+                                        {/* ✅ Logika Tampilan Harga dengan desain sejajar menyamping */}
+                                        {hasDiscount ? (
+                                            <div className="flex items-end gap-2.5">
+                                                <span className="text-3xl font-black text-rose-600 leading-none tracking-tight">
+                                                    {formatRupiah(course.harga_coret)}
+                                                </span>
+                                                <span className="text-sm font-bold text-slate-400 line-through mb-0.5">
+                                                    {formatRupiah(course.harga)}
+                                                </span>
+                                            </div>
+                                        ) : (
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-3xl font-black text-blue-950 leading-none tracking-tight">
                                                     {formatRupiah(course.harga)}
                                                 </span>
                                             </div>
-                                        </div>
+                                        )}
                                     </div>
 
                                     <div className="mb-6 flex-1">
@@ -240,10 +272,23 @@ export default function Catalog({ auth, courses }) {
                                     <h4 className="text-lg font-bold text-white mb-4 line-clamp-2 leading-tight">{selectedCourse.nama}</h4>
                                     
                                     <div className="border-t border-white/10 pt-4">
-                                        <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-1">Total Biaya Investasi</p>
-                                        <p className="text-3xl font-black text-white tracking-tight">
-                                            {formatRupiah(selectedCourse.harga)}
-                                        </p>
+                                        <p className="text-[10px] font-black text-blue-300 uppercase tracking-widest mb-3">Total Biaya Investasi</p>
+                                        
+                                        {/* ✅ Tampilan Harga Modal Pembayaran */}
+                                        {selectedCourse.harga_coret && Number(selectedCourse.harga) > Number(selectedCourse.harga_coret) ? (
+                                            <div className="flex items-end gap-3">
+                                                <p className="text-3xl font-black text-emerald-400 tracking-tight leading-none">
+                                                    {formatRupiah(selectedCourse.harga_coret)}
+                                                </p>
+                                                <span className="text-sm font-bold text-slate-400 line-through mb-0.5">
+                                                    {formatRupiah(selectedCourse.harga)}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-3xl font-black text-white tracking-tight leading-none">
+                                                {formatRupiah(selectedCourse.harga)}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
