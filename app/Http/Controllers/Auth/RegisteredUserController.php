@@ -16,6 +16,7 @@ use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\AdminPaymentNotification;
+use App\Mail\MemberRegistrationNotification; // 🔥 IMPORT MAILBARU UNTUK MEMBER
 use Illuminate\Support\Facades\Log;
 
 class RegisteredUserController extends Controller
@@ -31,7 +32,7 @@ class RegisteredUserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'phone' => 'nullable|string|max:20', // Diubah ke nullable agar aman jika input kosong
+            'phone' => 'nullable|string|max:20', 
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'alamat' => 'required|string',
             'pekerjaan' => 'required|string|max:255',
@@ -45,7 +46,7 @@ class RegisteredUserController extends Controller
         ]);
 
         try {
-            DB::transaction(function () use ($request) {
+            return DB::transaction(function () use ($request) {
                 // 1. Buat User
                 $user = User::create([
                     'name' => $request->name, 
@@ -80,26 +81,66 @@ class RegisteredUserController extends Controller
                 }
                 $transaction->courses()->attach($pivotData);
 
-                // 4. Kirim Email Admin (Dibungkus try-catch agar jika SMTP gagal, database tidak ikut di-rollback)
+                // 4. Bungkus Data Email (Dipakai Bersama)
+                $dataEmail = [
+                    'nama_member' => $request->name,
+                    'email_member' => $request->email,
+                    'nama_kelas' => $courses->pluck('nama')->implode(', '),
+                    'metode_pembayaran' => 'Midtrans Payment Gateway (Otomatis)',
+                ];
+
+                // Kirim Email Ke Admin
                 try {
-                    $dataEmail = [
-                        'nama_member' => $request->name,
-                        'nama_kelas' => $courses->pluck('nama')->implode(', '),
-                        'metode_pembayaran' => 'Midtrans Payment Gateway (Otomatis)',
-                    ];
                     Mail::to('miqothub@gmail.com')->send(new AdminPaymentNotification($dataEmail));
                 } catch (\Exception $mailException) {
                     Log::warning('Email notifikasi admin gagal dikirim: ' . $mailException->getMessage());
                 }
 
-                event(new Registered($user));
-            }); 
+                // 🔥 5. Kirim Email Ke Member (Aman dari pembatalan rollback DB jika gagal)
+                try {
+                    Mail::to($request->email)->send(new MemberRegistrationNotification($dataEmail));
+                } catch (\Exception $mailMemberException) {
+                    Log::warning('Email notifikasi pendaftar baru gagal dikirim: ' . $mailMemberException->getMessage());
+                }
 
-            return redirect()->route('login')->with('status', 'Pendaftaran berhasil! Akun Anda sedang diverifikasi.');
+                event(new Registered($user));
+
+                return redirect()->route('login')->with('success', 'Pendaftaran berhasil! Akun Anda sedang diverifikasi.');
+            }); 
 
         } catch (\Exception $e) {
             Log::error('Gagal Registrasi: ' . $e->getMessage());
             return back()->withErrors(['email' => 'Terjadi kesalahan saat menyimpan data pendaftaran. Silakan hubungi admin.']);
         }
+    }
+
+    /**
+     * Method Kroscek Email & No HP Sebelum Pembayaran Midtrans
+     */
+    public function checkExistingData(Request $request)
+    {
+        if ($request->filled('email')) {
+            $emailExists = User::where('email', $request->email)->exists();
+            if ($emailExists) {
+                return response()->json([
+                    'exists' => true,
+                    'message' => 'Email sudah terdaftar di sistem. Silakan gunakan email lain atau silakan login.'
+                ]);
+            }
+        }
+
+        if ($request->filled('phone') && $request->phone !== '-') {
+            $phoneExists = User::where('phone', $request->phone)->exists();
+            if ($phoneExists) {
+                return response()->json([
+                    'exists' => true,
+                    'message' => 'Nomor WhatsApp sudah terdaftar. Silakan gunakan nomor lain.'
+                ]);
+            }
+        }
+
+        return response()->json([
+            'exists' => false
+        ]);
     }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { motion } from 'framer-motion';
 import {
     Mail,
@@ -15,6 +15,9 @@ import {
 } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }) {
+    // 🔥 Mengambil shared data flash session dari Laravel middleware
+    const { flash } = usePage().props;
+
     const { data, setData, post, processing, errors, reset } = useForm({
         email: '',
         password: '',
@@ -62,7 +65,6 @@ export default function Login({ status, canResetPassword }) {
                 className="w-full max-w-5xl bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col md:flex-row relative z-10 border border-slate-100"
             >
                 {/* --- PANEL KIRI --- */}
-                {/* PERBAIKAN: Menambahkan flex-col-reverse atau penyesuaian gap agar di mobile tombol admin tidak menumpuk */}
                 <div className="flex w-full md:w-5/12 bg-slate-900 relative flex-col justify-between overflow-hidden">
                     
                     <img src="/assets/images/bg-login.jpg" className="absolute inset-0 w-full h-full object-cover opacity-20" alt="Background Login" loading="lazy" />
@@ -119,9 +121,10 @@ export default function Login({ status, canResetPassword }) {
                         <p className="text-slate-500 text-sm">Silakan masukkan email dan kata sandi Anda.</p>
                     </div>
 
-                    {status && (
+                    {/* 🔥 Perbaikan Kondisi: Mendukung status kustom Laravel dan flash success dari register */}
+                    {(status || flash?.success) && (
                         <div className="mb-6 font-semibold text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 p-4 rounded-xl flex items-center gap-3">
-                            <CheckCircle2 size={18} className="shrink-0" /> {status}
+                            <CheckCircle2 size={18} className="shrink-0" /> {status || flash?.success}
                         </div>
                     )}
 

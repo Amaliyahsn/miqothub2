@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\PostController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Member\CourseController as MemberCourseController;
 use App\Http\Controllers\Member\ExerciseController;
+use App\Http\Controllers\PaymentCallbackController;
+use App\Http\Controllers\Auth\RegisteredUserController; // 🔥 Ditambahkan agar class bisa dipanggil langsung di bawah
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -61,6 +63,8 @@ Route::get('/', function () {
 
 // 🔥 PERBAIKAN: Route ini dipindahkan ke area Public karena dipanggil saat user belum login (Register)
 Route::post('/payment/create-token', [PaymentController::class, 'createToken'])->name('payment.token');
+
+Route::post('/register/check', [RegisteredUserController::class, 'checkExistingData'])->name('register.check');
 
 
 /*
@@ -189,3 +193,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 |--------------------------------------------------------------------------
 */
 require __DIR__.'/auth.php';
+
+/*
+|--------------------------------------------------------------------------
+| Midtrans Webhook Callback Route (Public)
+|--------------------------------------------------------------------------
+*/
+// Hapus bagian yang salah dan ganti menjadi:
+Route::post('/api/midtrans-callback', [PaymentCallbackController::class, 'handleNotification']);

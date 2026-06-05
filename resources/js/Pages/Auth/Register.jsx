@@ -68,6 +68,27 @@ export default function Register({ courses }) {
 
         setIsPaymentLoading(true);
 
+        // =========================================================================
+        // 🔥 STEP 0: Validasi Awal ke Kroscek Database (Blok Terpisah Agar Aman)
+        // =========================================================================
+        try {
+            const checkResponse = await axios.post(route('register.check'), {
+                email: data.email,
+                phone: data.phone
+            });
+
+            if (checkResponse.data.exists) {
+                alert(checkResponse.data.message || "Email atau nomor HP sudah terdaftar. Silakan gunakan data lain.");
+                setIsPaymentLoading(false);
+                return; // Menghentikan alur jika data duplikat
+            }
+        } catch (checkError) {
+            console.error("Gagal melakukan kroscek database awal:", checkError);
+            // Jika route backend belum siap atau error, kita log saja agar tidak memblokir gerbang utama Midtrans
+        }
+        // =========================================================================
+
+        // Alur original Midtrans tetap berjalan di bawah ini tanpa terganggu
         try {
             // 1. Meminta token transaksi ke backend
             const response = await axios.post(route('payment.token'), {
@@ -83,7 +104,6 @@ export default function Register({ courses }) {
             // 2. Memunculkan Popup Snap Midtrans
             window.snap.pay(snapToken, {
                 onSuccess: function(result) {
-                    // Sinkronisasi data ke instansi useForm sebelum melakukan submit data flat
                     setData(data => ({
                         ...data,
                         midtrans_order_id: orderId,

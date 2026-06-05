@@ -26,7 +26,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => IsAdmin::class,
         ]);
 
-        //
+        // 🔥 PERBAIKAN: Menggunakan wildcard 'api/*' agar mencakup rute web yang menggunakan prefix api
+                $middleware->validateCsrfTokens(except: [
+            'api/midtrans-callback', 
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
