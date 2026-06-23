@@ -135,7 +135,7 @@ export default function Index({ auth, members = [], allCourses = [] }) {
                     <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
                         <Users className="text-blue-900 shrink-0" size={28} sm={32} /> Manajemen Member
                     </h1>
-                    <p className="text-slate-500 mt-1 font-semibold text-xs sm:text-sm">Kelola akses, verifikasi, dan data peserta pelatihan.</p>
+                    <p className="text-slate-500 mt-1 font-semibold text-xs sm:text-sm">Kelola akses, verifikasi, dan data member.</p>
                 </div>
                 <button 
                     onClick={() => setCreateModal(true)} 
@@ -432,24 +432,80 @@ export default function Index({ auth, members = [], allCourses = [] }) {
             />
 
             <ConfirmModal 
-                {...confirmModal}
-                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} 
-                onConfirm={executeAction} 
-                isProcessing={processingAction}
-                iconColor={confirmModal.color}
-            >
-                {confirmModal.isOpen && confirmModal.type === 'verify' && (
-                    <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Item Transaksi:</p>
-                        {members.find(m => m.id === confirmModal.id)?.transactions?.find(t => t.status === 'pending' || t.status === 'rejected')?.courses?.map(c => (
-                            <div key={c.id} className="text-sm font-bold text-blue-900 flex justify-between">
-                                <span>{c.nama}</span>
-                                <span>{formatRupiah(c.harga)}</span>
-                            </div>
-                        ))}
+    {...confirmModal}
+    onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))} 
+    onConfirm={executeAction} 
+    isProcessing={processingAction}
+    iconColor={confirmModal.color}
+>
+    {confirmModal.isOpen && confirmModal.type === 'verify' && (() => {
+        // 1. Cari data member aktif berdasarkan ID konfirmasi
+        const currentMember = members.find(m => m.id === confirmModal.id);
+        
+        // 2. Cek apakah ini pendaftaran akun baru tanpa transaksi awal
+        const isNewAccountRegistration = currentMember?.status_akun === 'pending';
+
+        // 3. Ambil data transaksi yang statusnya pending atau rejected (jika ada)
+        const activeTrx = currentMember?.transactions?.find(
+            t => t.status === 'pending' || t.status === 'rejected'
+        );
+
+        // KONDISI A: Jika akun baru DAN tidak punya data transaksi paket sama sekali
+        if (isNewAccountRegistration && (!activeTrx || !activeTrx.courses || activeTrx.courses.length === 0)) {
+            return (
+                <div className="mt-4 p-4 bg-blue-50/60 rounded-xl border border-blue-100 text-left w-full flex items-start gap-3">
+                    <div className="p-2 bg-blue-500 text-white rounded-lg text-xs font-black shrink-0">
+                        INFO
                     </div>
-                )}
-            </ConfirmModal>
+                    <div>
+                        <p className="text-xs font-bold text-blue-950">Registrasi Akun Baru</p>
+                        <p className="text-[11px] text-blue-700/90 font-medium mt-0.5 leading-relaxed">
+                            User ini murni mendaftar akun ke dalam platform MiqotHub dan tidak ada tagihan pembayaran paket kelas saat ini.
+                        </p>
+                    </div>
+                </div>
+            );
+        }
+
+        // KONDISI B: Jika ada transaksi paket kelas (Pembelian paket atau registrasi + langsung beli paket)
+        if (activeTrx && activeTrx.courses && activeTrx.courses.length > 0) {
+            return (
+                <div className="mt-4 p-4 bg-slate-50 rounded-xl border border-slate-100 text-left w-full">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2.5">
+                        Item & Nominal Tagihan (Database):
+                    </p>
+                    <div className="space-y-2">
+                        {activeTrx.courses.map(c => {
+                            // Ambil harga coret/promo jika ada di database, kalau tidak ada pakai harga normal
+                            const hargaFinal = c.harga_coret || c.harga;
+
+                            return (
+                                <div key={c.id} className="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-200/70 shadow-sm">
+                                    <div className="max-w-[65%]">
+                                        <span className="text-xs font-bold text-slate-800 block truncate">
+                                            {c.nama}
+                                        </span>
+                                        <span className="text-[10px] text-slate-400 font-medium">
+                                            Paket Pembelajaran
+                                        </span>
+                                    </div>
+                                    <div className="text-right shrink-0">
+                                        <span className="text-sm font-black text-emerald-600">
+                                            {formatRupiah(hargaFinal)}
+                                        </span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
+        // Jalur aman terakhir jika tidak masuk ke kondisi mana pun
+        return null;
+    })()}
+</ConfirmModal>
         </AdminLayout>
     );
 }

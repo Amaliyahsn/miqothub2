@@ -12,39 +12,37 @@ export default function Show({ auth, course }) {
     const [activeMaterial, setActiveMaterial] = useState(firstMaterial);
     const [expandedChapters, setExpandedChapters] = useState(firstChapter ? [firstChapter.id] : []);
 
-    
-    
-    
     useEffect(() => {
-        
         const handleContextMenu = (e) => e.preventDefault();
 
-        
         const handleAggressiveKeyDown = (e) => {
-            const allowedKeys = [
-                'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
-                'PageUp', 'PageDown', 'Home', 'End', ' ', 'F5'
-            ];
+    // 1. Izinkan tombol navigasi standar
+    const allowedKeys = [
+        'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight',
+        'PageUp', 'PageDown', 'Home', 'End', ' ', 'F5',
+        '+', '-', '=', '_' // 👈 Tambahkan ini agar karakter + dan - tidak di-block
+    ];
 
-            const isRefresh = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r';
+    const isRefresh = (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'r';
+    
+    // 2. 🛠️ FIX UNTUK ZOOM LAPTOP: Izinkan kombinasi Ctrl + atau Ctrl - atau Ctrl 0
+    const isZoom = (e.ctrlKey || e.metaKey) && ['+', '-', '=', '_', '0'].includes(e.key);
 
-            if (!allowedKeys.includes(e.key) && !isRefresh) {
-                e.preventDefault();
-                if (e.key === 'PrintScreen' || e.metaKey || e.ctrlKey) {
-                    navigator.clipboard.writeText(''); 
-                }
-            }
-        };
+    // Jika tombol tidak ada di whitelist, bukan refresh, dan bukan zoom, barulah diblokir
+    if (!allowedKeys.includes(e.key) && !isRefresh && !isZoom) {
+        e.preventDefault();
+        if (e.key === 'PrintScreen' || e.metaKey || e.ctrlKey) {
+            navigator.clipboard.writeText(''); 
+        }
+    }
+};
 
-        
         const handleDragStart = (e) => e.preventDefault();
 
-        
         document.addEventListener('contextmenu', handleContextMenu);
         document.addEventListener('keydown', handleAggressiveKeyDown);
         document.addEventListener('dragstart', handleDragStart);
 
-        
         return () => {
             document.removeEventListener('contextmenu', handleContextMenu);
             document.removeEventListener('keydown', handleAggressiveKeyDown);
@@ -62,12 +60,8 @@ export default function Show({ auth, course }) {
         <div className="min-h-screen bg-slate-50/50 flex flex-col font-sans select-none">
             <Head title={`${course.nama} - Ruang Belajar`} />
 
-            
-            
-            
             <nav className="bg-blue-950 text-white sticky top-0 z-50 shadow-xl shadow-blue-950/10 border-b border-blue-900/50">
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-                    
                     
                     <div className="flex items-center gap-4 md:gap-5">
                         <Link 
@@ -83,7 +77,6 @@ export default function Show({ auth, course }) {
                         </div>
                     </div>
 
-                    
                     <div className="hidden lg:flex items-center gap-3 bg-blue-900/30 px-4 py-2 rounded-xl border border-blue-800/30">
                         <GraduationCap size={18} className="text-blue-400" />
                         <div className="flex flex-col text-right">
@@ -95,17 +88,12 @@ export default function Show({ auth, course }) {
                 </div>
             </nav>
             
-            
-            
-            
             <main className="flex-1 max-w-[1600px] mx-auto w-full flex flex-col lg:flex-row items-start gap-6 lg:gap-8 p-4 md:p-6 lg:p-8">
-                
                 
                 <div className="w-full lg:flex-1 min-w-0">
                     <MaterialViewer activeMaterial={activeMaterial} />
                 </div>
 
-                
                 <div className="w-full lg:w-[400px] shrink-0 flex flex-col gap-4">
                     <CurriculumSidebar 
                         course={course} 

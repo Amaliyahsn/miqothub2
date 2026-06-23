@@ -128,17 +128,23 @@ export default function ViewMemberModal({ isOpen, onClose, member }) {
                                                 Program Kelas ({courses.length})
                                             </h4>
                                             <div className="space-y-2.5 sm:space-y-3">
-                                                {courses.length > 0 ? courses.map(course => (
-                                                    <div key={course.id} className="p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center hover:border-blue-200 transition-colors shadow-sm gap-4">
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight mb-1 truncate">{course.nama}</p>
-                                                            <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded uppercase tracking-wider">Batch {course.batch}</span>
+                                                {courses.length > 0 ? courses.map(course => {
+                                                    // Ambil nilai harga_coret jika bernilai true/ada di dalam objek database
+                                                    const hargaFinal = course.harga_coret || course.harga;
+
+                                                    return (
+                                                        <div key={course.id} className="p-3 sm:p-4 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center hover:border-blue-200 transition-colors shadow-sm gap-4">
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="text-xs sm:text-sm font-bold text-slate-900 leading-tight mb-1 truncate">{course.nama}</p>
+                                                                <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded uppercase tracking-wider">Batch {course.batch}</span>
+                                                            </div>
+                                                            <div className="text-right shrink-0">
+                                                                {/* Menampilkan nominal yang telah disesuaikan dengan kondisi database */}
+                                                                <p className="text-xs sm:text-sm font-black text-slate-900">{formatRupiah(hargaFinal)}</p>
+                                                            </div>
                                                         </div>
-                                                        <div className="text-right shrink-0">
-                                                            <p className="text-xs sm:text-sm font-black text-slate-900">{formatRupiah(course.harga)}</p>
-                                                        </div>
-                                                    </div>
-                                                )) : (
+                                                    );
+                                                }) : (
                                                     <div className="p-5 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-xs sm:text-sm font-medium text-slate-500">Data kelas tidak ditemukan.</div>
                                                 )}
                                             </div>

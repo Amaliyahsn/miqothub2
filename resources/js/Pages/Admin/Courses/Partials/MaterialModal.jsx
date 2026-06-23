@@ -4,10 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FileText, X, Save } from 'lucide-react';
 
 export default function MaterialModal({ show, onClose, chapterId, material, nextOrder }) {
+    // 🛠️ PERBAIKAN: Menghapus default '_method: "post"' agar tidak merusak payload file binary saat CREATE
     const { data, setData, post, processing, reset, errors } = useForm({
-        judul: '', tipe: 'video', deskripsi: '', 
-        link_video: '', file_path: null, 
-        is_preview: false, urutan: 1, _method: 'post'
+        judul: '', 
+        tipe: 'video', 
+        deskripsi: '', 
+        link_video: '', 
+        file_path: null, 
+        is_preview: false, 
+        urutan: 1
     });
 
     useEffect(() => {
@@ -21,12 +26,18 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
                     file_path: null, 
                     is_preview: material.is_preview ? true : false, 
                     urutan: material.urutan, 
-                    _method: 'put'
+                    _method: 'put' // 🚀 Tetap dipertahankan untuk mengaktifkan Method Spoofing Laravel saat UPDATE
                 });
             } else {
                 setData({
-                    judul: '', tipe: 'video', deskripsi: '', link_video: '', file_path: null,
-                    is_preview: false, urutan: nextOrder, _method: 'post'
+                    judul: '', 
+                    tipe: 'video', 
+                    deskripsi: '', 
+                    link_video: '', 
+                    file_path: null,
+                    is_preview: false, 
+                    urutan: nextOrder
+                    // 🚀 Bersih dari '_method: "post"', request murni menggunakan POST asli bawaan browser
                 });
             }
         } else {
@@ -49,7 +60,11 @@ export default function MaterialModal({ show, onClose, chapterId, material, next
             }
         }
         
-        post(targetRoute, { forceFormData: true, onSuccess: () => onClose() });
+        // Inertia secara otomatis mengemas request ke dalam FormData jika mendeteksi payload file
+        post(targetRoute, { 
+            forceFormData: true, 
+            onSuccess: () => onClose() 
+        });
     };
 
     return (

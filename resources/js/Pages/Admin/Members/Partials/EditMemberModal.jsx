@@ -1,9 +1,9 @@
 import { useForm } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, X, Upload, User, Book, CheckCircle2 } from 'lucide-react';
+import { Edit, X, Upload, User, CheckCircle2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-export default function EditMemberModal({ isOpen, onClose, member, classes = [] }) {
+export default function EditMemberModal({ isOpen, onClose, member }) {
     const [preview, setPreview] = useState(null);
 
     const { data, setData, post, processing, clearErrors, reset, errors } = useForm({
@@ -15,20 +15,11 @@ export default function EditMemberModal({ isOpen, onClose, member, classes = [] 
         alamat: '', 
         status: '', 
         status_akun: '',
-        class_id: '', 
         password: '', 
         foto_profile: null
     });
 
-    // 1. Ambil ID kelas yang sudah diikuti untuk filter dropdown
-    const followedCourseIds = member?.transactions?.flatMap(trx => 
-        trx.courses?.map(c => c.id)
-    ) || [];
-
-    // 2. Filter list classes agar hanya menampilkan yang BELUM diikuti
-    const availableClasses = classes.filter(item => !followedCourseIds.includes(item.id));
-
-    // 3. Ambil data nama kelas yang sudah diikuti untuk ditampilkan di UI
+    // Ambil data nama kelas yang sudah diikuti hanya untuk ditampilkan sebagai informasi (Read-only)
     const currentCourses = member?.transactions?.flatMap(trx => 
         trx.courses?.map(c => ({ id: c.id, nama: c.nama }))
     ) || [];
@@ -45,7 +36,6 @@ export default function EditMemberModal({ isOpen, onClose, member, classes = [] 
                 alamat: member.alamat || '', 
                 status: member.status || '', 
                 status_akun: member.status_akun || 'aktif',
-                class_id: '', 
                 password: '', 
                 foto_profile: null 
             });
@@ -127,7 +117,7 @@ export default function EditMemberModal({ isOpen, onClose, member, classes = [] 
                                 </div>
                             </div>
 
-                            {/* TAMPILAN KELAS YANG SUDAH DIIKUTI */}
+                            {/* TAMPILAN KELAS YANG SUDAH DIIKUTI (INFORMASI SAJA) */}
                             {currentCourses.length > 0 && (
                                 <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
                                     <label className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider mb-2 block">Kelas yang sedang diikuti</label>
@@ -176,46 +166,17 @@ export default function EditMemberModal({ isOpen, onClose, member, classes = [] 
                                 </div>
                             </div>
 
-                            {/* BARIS 3: KELAS & PEKERJAAN */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5">
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">
-                                        Daftarkan ke Kelas Baru
-                                    </label>
-                                    <div className="relative">
-                                        <select 
-                                            value={data.class_id} 
-                                            onChange={e => setData('class_id', e.target.value)}
-                                            className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3 px-4 text-sm font-medium transition-colors appearance-none cursor-pointer"
-                                        >
-                                            <option value="">-- Pilih Kelas --</option>
-                                            {availableClasses.map((item) => (
-                                                <option key={item.id} value={item.id}>
-                                                    {item.nama}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <Book size={16} />
-                                        </div>
-                                    </div>
-                                    {availableClasses.length === 0 && (
-                                        <p className="text-[10px] text-amber-600 mt-1 font-medium italic">*Semua kelas sudah diikuti.</p>
-                                    )}
-                                    {errors.class_id && <p className="text-rose-500 text-xs mt-1.5 font-semibold">{errors.class_id}</p>}
-                                </div>
-                                
-                                <div>
-                                    <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">
-                                        Pekerjaan
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        value={data.pekerjaan} 
-                                        onChange={e => setData('pekerjaan', e.target.value)} 
-                                        className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3 px-4 text-sm font-medium transition-colors" 
-                                    />
-                                </div>
+                            {/* BARIS 3: PEKERJAAN (FULL WIDTH) */}
+                            <div>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">
+                                    Pekerjaan
+                                </label>
+                                <input 
+                                    type="text" 
+                                    value={data.pekerjaan} 
+                                    onChange={e => setData('pekerjaan', e.target.value)} 
+                                    className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3 px-4 text-sm font-medium transition-colors" 
+                                />
                             </div>
 
                             {/* BARIS 4: UMUR & STATUS PERNIKAHAN */}
@@ -226,7 +187,7 @@ export default function EditMemberModal({ isOpen, onClose, member, classes = [] 
                                 </div>
                                 <div>
                                     <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 block">Status Pernikahan</label>
-                                    <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full rounded-xl border-slate-200 bg-slate-50 focus:border-blue-500 py-3 px-4 text-sm font-semibold transition-colors cursor-pointer appearance-none">
+                                    <select value={data.status} onChange={e => setData('status', e.target.value)} className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 py-3 px-4 text-sm font-semibold transition-colors cursor-pointer appearance-none">
                                         <option value="">Pilih...</option>
                                         <option value="menikah">Menikah</option>
                                         <option value="belum">Belum Menikah</option>

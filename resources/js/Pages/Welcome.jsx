@@ -988,10 +988,9 @@ const [selectedPost, setSelectedPost] = useState(null);
                     </span>
                 </div>
             </a>
-
-            <AnimatePresence>
+<AnimatePresence>
 {selectedCourse && (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center sm:p-6">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6">
         
         {/* BACKDROP */}
         <motion.div
@@ -999,98 +998,130 @@ const [selectedPost, setSelectedPost] = useState(null);
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setSelectedCourse(null)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-slate-950/60 backdrop-blur-md cursor-pointer"
         />
 
-        {/* MODAL */}
+        {/* MODAL CONTAINER */}
         <motion.div
-            initial={{ y: "100%", opacity: 0 }}
+            initial={{ y: "100%", opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: "100%", opacity: 0 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full sm:max-w-2xl bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+            exit={{ y: "100%", opacity: 0.5 }}
+            transition={{ type: "spring", damping: 30, stiffness: 350 }}
+            className="relative w-full sm:max-w-xl bg-white rounded-t-[2.5rem] sm:rounded-[2rem] shadow-2xl h-[85vh] sm:h-auto sm:max-h-[85vh] flex flex-col overflow-hidden border border-slate-100"
         >
-            {/* CLOSE BUTTON */}
+            {/* FLOATING CLOSE BUTTON */}
             <button
                 onClick={() => setSelectedCourse(null)}
-                className="absolute top-4 right-4 z-50 p-2 bg-slate-100 hover:bg-slate-900 text-slate-600 hover:text-white rounded-full transition"
+                className="absolute top-4 right-4 sm:top-5 sm:right-5 z-50 p-2.5 bg-slate-900/5 hover:bg-slate-900/10 active:scale-95 text-slate-700 rounded-full transition-all border border-slate-200/40 backdrop-blur-md"
             >
-                <X size={20} />
+                <X size={18} strokeWidth={2.5} />
             </button>
 
-            {/* IMAGE */}
-            <div className="h-52 bg-slate-100">
-                {selectedCourse.thumbnail_url ? (
-                    <img
-                        src={selectedCourse.thumbnail_url}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="text-slate-300" size={40} />
-                    </div>
-                )}
-            </div>
-
-            {/* CONTENT */}
-            <div className="p-6 sm:p-8">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 mb-2">
-                    {selectedCourse.nama}
-                </h2>
-                <div
-                    className="text-slate-600 text-sm leading-relaxed mb-4"
-                    dangerouslySetInnerHTML={{ __html: selectedCourse.deskripsi }}
-                ></div>
-
-                <p className="text-slate-500 text-sm mb-4">
-                    {selectedCourse.batch}
-                </p>
-
-                {/* HARGA */}
-                <div className="mb-5">
-                    {Number(selectedCourse.harga || 0) > 0 && (
-                        <div className="text-sm text-slate-400 line-through">
-                            {formatRupiah(selectedCourse.harga)}
+            {/* AREA KONTEN (SCROLLABLE) */}
+            <div className="overflow-y-auto flex-1 scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                
+                {/* HERO THUMBNAIL */}
+                <div className="h-48 sm:h-56 bg-slate-50 relative shrink-0 overflow-hidden">
+                    {selectedCourse.thumbnail_url ? (
+                        <img
+                            src={selectedCourse.thumbnail_url}
+                            alt={selectedCourse.nama}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-blue-50/50">
+                            <BookOpen className="text-blue-200" size={44} strokeWidth={1.5} />
                         </div>
                     )}
-                    <div className="text-2xl font-black text-blue-600">
-                        {formatRupiah(selectedCourse.harga_coret)}
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
+                </div>
+
+                {/* KONTEN UTAMA */}
+                <div className="px-6 sm:px-8 pt-6 pb-12 sm:pb-8">
+                    
+                    {/* Badge Batch */}
+                    <div className="mb-3">
+                        <span className="text-[10px] font-black text-blue-600 bg-blue-50/80 px-3 py-1.5 rounded-full uppercase tracking-wider border border-blue-100/50">
+                            Batch {selectedCourse.batch}
+                        </span>
                     </div>
-                </div>
 
-                {/* FITUR FULL */}
-                <div className="space-y-2 mb-6">
-                    {(() => {
-                        let fiturList = [];
-                        try {
-                            fiturList =
-                                typeof selectedCourse.fitur === "string"
-                                    ? JSON.parse(selectedCourse.fitur)
-                                    : selectedCourse.fitur || [];
-                        } catch {
-                            fiturList = [];
-                        }
+                    {/* Judul Kelas */}
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight mb-4 pr-10">
+                        {selectedCourse.nama}
+                    </h2>
 
-                        return fiturList.map((item, i) => (
-                            <div key={i} className="flex gap-2 text-sm text-slate-600">
-                                <CheckCircle2 size={16} className="text-blue-600 mt-0.5" />
-                                {item}
+                    {/* Blok Harga */}
+                    <div className="mb-6 p-4 bg-slate-50/80 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Investasi Skill</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-black text-blue-600 tracking-tight">
+                                    {formatRupiah(selectedCourse.harga_coret)}
+                                </span>
+                                {Number(selectedCourse.harga || 0) > 0 && (
+                                    <span className="text-xs font-semibold text-slate-400 line-through">
+                                        {formatRupiah(selectedCourse.harga)}
+                                    </span>
+                                )}
                             </div>
-                        ));
-                    })()}
-                </div>
+                        </div>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-200/50 px-2.5 py-1 rounded-md">Full Akses</span>
+                    </div>
 
-                {/* CTA */}
-                <Link
-                    href={
-                        auth?.user
-                            ? route("member.catalog")
-                            : route("register")
-                    }
-                    className="block w-full text-center py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition"
-                >
-                    Daftar Sekarang
-                </Link>
+                    <div className="h-px w-full bg-slate-100 mb-6"></div>
+
+                    {/* Deskripsi Tentang Program */}
+<div className="mb-8">
+    <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Tentang Program</h4>
+    {/* 🔥 PERBAIKAN: prose dilepas, diganti dengan kombinasi whitespace-pre-line dan text-justify */}
+    <div
+        className="text-slate-600 text-sm leading-relaxed break-words text-justify whitespace-pre-line font-medium"
+        style={{ 
+            hyphens: 'auto', 
+            textAlignLast: 'left' 
+        }}
+        dangerouslySetInnerHTML={{ __html: selectedCourse.deskripsi }}
+    ></div>
+</div>
+
+                    {/* Fasilitas Program */}
+                    <div className="mb-10">
+                        <h4 className="text-xs font-black text-slate-900 uppercase tracking-widest mb-3">Fasilitas Kelas</h4>
+                        <div className="grid grid-cols-1 gap-3">
+                            {(() => {
+                                let fiturList = [];
+                                try {
+                                    fiturList = typeof selectedCourse.fitur === "string"
+                                        ? JSON.parse(selectedCourse.fitur)
+                                        : selectedCourse.fitur || [];
+                                } catch {
+                                    fiturList = [];
+                                }
+
+                                return fiturList.map((item, i) => (
+                                    <div key={i} className="flex gap-3 text-xs sm:text-sm font-medium text-slate-600 items-start p-3 bg-slate-50/40 rounded-xl border border-slate-100/60">
+                                        <div className="bg-emerald-100 rounded-full p-0.5 mt-0.5 shrink-0">
+                                            <CheckCircle2 size={14} className="text-emerald-600" strokeWidth={2.5} />
+                                        </div>
+                                        <span className="leading-tight">{item}</span>
+                                    </div>
+                                ));
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* BUTTON CTA */}
+                    <div className="w-full">
+                        <Link
+                            href={auth?.user ? route("member.catalog") : route("register")}
+                            className="block w-full text-center py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs sm:text-sm tracking-wider uppercase shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 transition-all duration-300 active:scale-[0.98]"
+                        >
+                            Daftar Sekarang
+                        </Link>
+                    </div>
+
+                </div>
             </div>
         </motion.div>
     </div>

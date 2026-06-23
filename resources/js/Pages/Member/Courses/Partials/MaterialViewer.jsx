@@ -12,7 +12,6 @@ import pdfWorker from 'pdfjs-dist/build/pdf.worker?url';
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 export default function MaterialViewer({ activeMaterial }) {
-    
     const getEmbedUrl = (url) => {
         if (!url) return '';
         const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
@@ -39,7 +38,6 @@ export default function MaterialViewer({ activeMaterial }) {
     }
 
     return (
-        /* ✅ BAGIAN LUAR SEKARANG BEBAS (Bisa Klik Kanan, Klik Kiri, Inspect) */
         <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
             
             {/* 1. VIDEO SECTION */}
@@ -61,7 +59,7 @@ export default function MaterialViewer({ activeMaterial }) {
                 </div>
             )}
 
-            {/* 2. PDF SECTION (Hanya di sini yang dikunci) */}
+            {/* 2. PDF SECTION */}
             {activeMaterial.tipe === 'pdf' && (
                 <SecurePDFViewer materialId={activeMaterial.id} />
             )}
@@ -162,7 +160,6 @@ export default function MaterialViewer({ activeMaterial }) {
                 )}
             </div>
 
-            {/* CSS PROTECTIONS (Hanya Cetak) */}
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print { body { display: none !important; } }
             `}} />
@@ -170,77 +167,203 @@ export default function MaterialViewer({ activeMaterial }) {
     );
 }
 
-// ✅ SUB-KOMPONEN SECURE PDF BOX
+// ✅ SUB-KOMPONEN SECURE PDF BOX (FIXED CENTERED SPINNER & RESPONSIVE SCROLL)
 function SecurePDFViewer({ materialId }) {
     const containerRef = useRef();
+    const [pdfDoc, setPdfDoc] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
+    // 1. Ambil Dokumen PDF Mentah via Fetch
     useEffect(() => {
-        const renderPDF = async () => {
+        let isCancelled = false;
+        const loadPDF = async () => {
             setLoading(true);
+            setError("");
             try {
-                const pdf = await pdfjsLib.getDocument(`/materials/stream-pdf/${materialId}`).promise;
-                const container = containerRef.current;
-                if (!container) return;
-                container.innerHTML = ''; 
+                const response = await fetch(`/materials/stream-pdf/${materialId}`, {
+                    headers: { 'Accept': 'application/pdf' },
+                });
 
-                for (let i = 1; i <= pdf.numPages; i++) {
-                    const page = await pdf.getPage(i);
-                    const viewport = page.getViewport({ scale: 2.0 }); 
+                if (!response.ok) {
+                    throw new Error(`Gagal mengunduh berkas materi (Status: ${response.status})`);
+                }
 
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
+                const buffer = await response.arrayBuffer();
+                if (isCancelled) return;
 
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
-                    canvas.style.width = '100%'; 
-                    canvas.style.height = 'auto';
-                    canvas.style.marginBottom = '24px';
-                    canvas.className = "shadow-xl border border-slate-200 bg-white rounded-sm";
+                const loadingTask = pdfjsLib.getDocument({
+                    data: new Uint8Array(buffer),
+                });
 
-                    container.appendChild(canvas);
+                const pdf = await loadingTask.promise;
+                if (!isCancelled) {
+                    setPdfDoc(pdf);
+                    setLoading(false);
+                }
+            } catch (err) {
+                console.error("PDF Load Error:", err);
+                if (!isCancelled) {
+                    setError("Gagal memuat materi edukasi. Coba refresh browser Anda.");
+                    setLoading(false);
+                }
+            }
+        };
+
+        loadPDF();
+
+        const handleKey = (e) => {
+            // Biarkan tombol whitelist filter global di Show.jsx yang menghandle perizinan zoom browser
+            if (e.ctrlKey && ["c", "s", "u", "p"].includes(e.key.toLowerCase())) e.preventDefault();
+        };
+        document.addEventListener("keydown", handleKey);
+        return () => {
+            isCancelled = true;
+            document.removeEventListener("keydown", handleKey);
+        };
+    }, [materialId]);
+
+    // 2. Setup Intersection Observer (FIX FULL BOX + CENTERED PAGE PLACEHOLDER)
+    useEffect(() => {
+        if (!pdfDoc || loading) return;
+
+        const container = containerRef.current;
+        if (!container) return;
+        container.innerHTML = ""; 
+
+        const activeRenderTasks = {};
+        const observers = [];
+
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const pageDiv = document.createElement("div");
+            pageDiv.id = `pdf-page-container-${i}`;
+            
+            // ✅ Ditambahkan flex-col items-center justify-center agar teks pemuatan berada MUTLAK di tengah box abu-abu
+            pageDiv.className = "w-full mb-8 relative min-h-[50vh] flex flex-col items-center justify-center bg-slate-100/30 rounded-xl border border-slate-200/40 shadow-sm overflow-hidden p-1 md:p-2";
+
+            const loadingWrapper = document.createElement('div');
+            loadingWrapper.className = "text-center flex flex-col items-center justify-center gap-2";
+
+            const loadingText = document.createElement("span");
+            loadingText.className = "text-xs font-semibold text-slate-400 animate-pulse tracking-wider";
+            loadingText.innerText = `Memuat halaman ${i}...`;
+            
+            loadingWrapper.appendChild(loadingText);
+            pageDiv.appendChild(loadingWrapper);
+            container.appendChild(pageDiv);
+
+            const renderPageGradual = async (pageNum, targetDiv) => {
+                if (activeRenderTasks[pageNum]) return;
+                activeRenderTasks[pageNum] = true;
+
+                try {
+                    const page = await pdfDoc.getPage(pageNum);
+                    targetDiv.innerHTML = ""; 
+
+                    const pixelRatio = window.devicePixelRatio || 1;
+                    const unscaledViewport = page.getViewport({ scale: 1 });
+                    const parentWidth = targetDiv.clientWidth || 800;
+
+                    // Mengukur aspek lebar responsif penuh menyesuaikan orientasi PDF
+                    const baseScale = (parentWidth - 16) / unscaledViewport.width;
+                    const lowScaleMultiplier = 1.2;
+                    const hdScaleMultiplier = 2.2; 
+
+                    const lowViewport = page.getViewport({ scale: baseScale * lowScaleMultiplier });
+                    const canvas = document.createElement("canvas");
+                    const context = canvas.getContext("2d");
+
+                    canvas.height = lowViewport.height * pixelRatio;
+                    canvas.width = lowViewport.width * pixelRatio;
+                    canvas.style.width = "100%";
+                    canvas.style.height = "auto";
+                    canvas.style.maxWidth = "100%";
+                    canvas.className = "bg-white shadow-md rounded-lg transition-opacity duration-300 opacity-60";
+
+                    targetDiv.appendChild(canvas);
+                    context.scale(pixelRatio, pixelRatio);
 
                     await page.render({
                         canvasContext: context,
-                        viewport: viewport
+                        viewport: lowViewport,
                     }).promise;
+
+                    canvas.classList.remove("opacity-60");
+
+                    setTimeout(async () => {
+                        try {
+                            const hdViewport = page.getViewport({ scale: baseScale * hdScaleMultiplier });
+
+                            canvas.height = hdViewport.height * pixelRatio;
+                            canvas.width = hdViewport.width * pixelRatio;
+
+                            context.restore(); 
+                            context.save();
+                            context.scale(pixelRatio, pixelRatio);
+
+                            await page.render({
+                                canvasContext: context,
+                                viewport: hdViewport,
+                              }).promise;
+                        } catch (hdErr) {
+                            console.error(`HD Render timeout error on page ${pageNum}:`, hdErr);
+                        }
+                    }, 100);
+                } catch (err) {
+                    console.error(`Error gradual rendering page ${pageNum}:`, err);
                 }
-            } catch (err) {
-                console.error('PDF Render Error:', err);
-            }
-            setLoading(false);
-        };
+            };
 
-        renderPDF();
+            const observer = new IntersectionObserver(
+                (entries) => {
+                    entries.forEach((entry) => {
+                        if (entry.isIntersecting) {
+                            renderPageGradual(i, pageDiv);
+                            observer.unobserve(pageDiv);
+                        }
+                    });
+                },
+                { rootMargin: "300px" },
+            );
 
-        // 🔒 Keyboard Protection (Hanya berlaku saat komponen ini dipasang)
-        const handleKey = (e) => {
-            if (e.ctrlKey && ['c','s','u','p'].includes(e.key.toLowerCase())) e.preventDefault();
+            observer.observe(pageDiv);
+            observers.push({ observer, element: pageDiv });
+        }
+
+        return () => {
+            observers.forEach(({ observer, element }) => observer.unobserve(element));
         };
-        document.addEventListener('keydown', handleKey);
-        return () => document.removeEventListener('keydown', handleKey);
-    }, [materialId]);
+    }, [pdfDoc, loading]);
 
     return (
-        /* ✅ PROTEKSI SEKARANG HANYA TERKUNCI DI DALAM DIV INI */
-        <div 
-            className="bg-slate-50 flex flex-col border-b border-slate-200 relative" 
+        <div
+            className="bg-slate-50 flex flex-col border-b border-slate-200 relative"
             onContextMenu={(e) => e.preventDefault()}
-            style={{ 
-                userSelect: 'none', 
-                WebkitUserSelect: 'none', 
-                MozUserSelect: 'none', 
-                msUserSelect: 'none' 
+            style={{
+                userSelect: "none",
+                WebkitUserSelect: "none",
+                MozUserSelect: "none",
+                msUserSelect: "none",
             }}
         >
-            <div className="h-[75vh] overflow-y-auto p-4 md:p-10 scrollbar-thin bg-slate-200/40">
+            {/* ✅ FIXED MAIN SPINNER POSITION (Mutlak Center Row & Column) */}
+            <div className="h-[75vh] overflow-y-auto p-4 md:p-8 scrollbar-thin bg-slate-200/40 flex items-start justify-center relative">
                 {loading && (
-                    <div className="flex flex-col items-center justify-center h-full gap-3">
-                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Enkripsi Materi HD...</span>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center m-auto gap-4 bg-slate-50/80 z-10 w-full h-full text-center">
+                        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-sm font-bold text-slate-500 uppercase tracking-widest block">
+                            Memproses Materi...
+                        </span>
                     </div>
                 )}
-                <div ref={containerRef} className="max-w-4xl mx-auto"></div>
+
+                {error && (
+                    <div className="flex flex-col items-center justify-center m-auto gap-2 text-rose-600 p-8 text-center font-semibold text-sm">
+                        <span>{error}</span>
+                    </div>
+                )}
+
+                <div ref={containerRef} className="w-full max-w-3xl mx-auto"></div>
             </div>
 
             <div className="p-3.5 bg-blue-950 text-blue-100 text-[10px] font-bold text-center flex items-center justify-center gap-2.5 relative z-20 shadow-lg tracking-widest uppercase">
