@@ -16,7 +16,9 @@ class CourseController extends Controller
         $courses = Course::with(['transactions' => function ($query) {
             $query->where('status', 'verified')->with('user:id,name,email');
         }])->latest()->get()->map(function ($course) {
+            // Menggunakan properti dari accessor model jika sudah ada, atau manual asset fallback
             $course->thumbnail_url = $course->thumbnail ? asset('storage/' . $course->thumbnail) : null;
+            
             // Menambahkan status expired agar bisa dibaca di frontend (opsional)
             $course->is_expired = $course->tanggal_selesai && \Carbon\Carbon::parse($course->tanggal_selesai)->isPast();
             return $course;
@@ -47,6 +49,7 @@ class CourseController extends Controller
             'link_grup_wa' => 'nullable|url',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'fitur' => 'nullable|array', 
+            'durasi_hari' => 'nullable|integer|min:1', // ✅ Ditambahkan opsional agar sinkron dengan masa aktif personal pivot
         ]);
 
         $thumbnailPath = null;
@@ -70,6 +73,7 @@ class CourseController extends Controller
             'link_grup_wa' => $request->link_grup_wa,
             'fitur' => $request->fitur, 
             'thumbnail' => $thumbnailPath,
+            'durasi_hari' => $request->durasi_hari ?? 30, // ✅ Default 30 hari masa aktif akses kelas jika kosong
         ]);
 
         return redirect()->route('admin.courses.index')->with('success', 'Kelas baru berhasil ditambahkan!');
@@ -90,6 +94,7 @@ class CourseController extends Controller
             'link_grup_wa' => 'nullable|url',
             'thumbnail' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'fitur' => 'nullable|array',
+            'durasi_hari' => 'nullable|integer|min:1', // ✅ Ditambahkan opsional saat update
         ]);
 
         $data = $request->except(['thumbnail']);
@@ -104,7 +109,7 @@ class CourseController extends Controller
         }
 
         // Karena menggunakan $request->except(['thumbnail']), 
-        // maka field 'tanggal_selesai' sudah otomatis ada di dalam array $data
+        // maka field 'tanggal_selesai' dan 'durasi_hari' otomatis aman di dalam array $data
         $course->update($data);
 
         return redirect()->route('admin.courses.index')->with('success', 'Data Kelas berhasil diperbarui!');

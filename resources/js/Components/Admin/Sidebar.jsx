@@ -1,6 +1,6 @@
 import { Link } from '@inertiajs/react';
-// Import Newspaper untuk Berita & Kegiatan
-import { LayoutDashboard, Users, BookOpen, Settings, X, ShieldCheck, TrendingUp, Newspaper } from 'lucide-react';
+// Import Newspaper untuk Berita & Kegiatan, serta Activity untuk Sesi Login Aktif
+import { LayoutDashboard, Users, BookOpen, Settings, X, ShieldCheck, TrendingUp, Newspaper, Activity } from 'lucide-react';
 
 export default function Sidebar({ isOpen, setIsOpen }) {
     // Menu Admin
@@ -15,6 +15,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         
         // MENU BARU: Berita & Kegiatan
         { name: 'Berita & Kegiatan', icon: <Newspaper size={20} />, route: 'admin.posts.index', active: route().current('admin.posts.*') },
+        
+        // MENU MANAJEMEN SESI: Sesi Login Aktif
+        { name: 'Sesi Login Aktif', icon: <Activity size={20} />, route: 'admin.sessions.index', active: route().current('admin.sessions.*') },
         
         { name: 'Konfigurasi', icon: <Settings size={20} />, route: 'admin.settings.index', active: route().current('admin.settings.*') },
     ];

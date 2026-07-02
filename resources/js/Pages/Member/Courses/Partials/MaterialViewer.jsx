@@ -40,25 +40,54 @@ export default function MaterialViewer({ activeMaterial }) {
     return (
         <div className="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden flex flex-col">
             
-            {/* 1. VIDEO SECTION */}
-            {activeMaterial.tipe === 'video' && (
-                <div className="aspect-video bg-slate-900 w-full relative border-b border-slate-200 shadow-inner overflow-hidden">
-                    {activeMaterial.link_video ? (
-                        <iframe 
-                            src={getEmbedUrl(activeMaterial.link_video)} 
-                            className="absolute inset-0 w-full h-full"
-                            allowFullScreen
-                            title={activeMaterial.judul}
-                        ></iframe>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-3">
-                            <MonitorPlay size={48} className="opacity-20" />
-                            <span className="font-semibold text-sm tracking-wider uppercase">Video tidak tersedia</span>
-                        </div>
-                    )}
-                </div>
-            )}
+{/* 1. VIDEO SECTION */}
+{activeMaterial.tipe === 'video' && (
+    <div 
+        className="aspect-video bg-slate-900 w-full relative border-b border-slate-200 shadow-inner overflow-hidden"
+        style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+    >
+        {activeMaterial.link_video ? (
+            <div className="relative w-full h-full">
+                <iframe 
+                    src={`${getEmbedUrl(activeMaterial.link_video)}?rel=0&modestbranding=1&controls=1&disablekb=1&iv_load_policy=3`} 
+                    className="absolute inset-0 w-full h-full"
+                    allowFullScreen={false}
+                    title={activeMaterial.judul}
+                ></iframe>
+                
+                {/* 🛡️ OVERLAY PROTEKSI - MENJAGA TOMBOL SENSITIF & TETAP BISA DI-PLAY */}
+                
+                {/* 1. Tutupi Bagian Atas (Mencegah klik judul, Share, dan Watch Later) */}
+                <div 
+                    className="absolute top-0 left-0 w-full h-[15%] z-[10] bg-transparent"
+                    onContextMenu={(e) => e.preventDefault()}
+                    onDragStart={(e) => e.preventDefault()}
+                ></div>
 
+                {/* 2. Tutupi Pojok Kanan Bawah (Mencegah klik logo "Watch on YouTube") */}
+                <div 
+                    className="absolute bottom-0 right-0 w-[30%] h-[15%] z-[10] bg-transparent"
+                    onContextMenu={(e) => e.preventDefault()}
+                    onDragStart={(e) => e.preventDefault()}
+                ></div>
+
+                {/* 3. Tutupi Pojok Kiri Bawah (Mencegah klik logo channel/profil jika muncul) */}
+                <div 
+                    className="absolute bottom-0 left-0 w-[20%] h-[15%] z-[10] bg-transparent"
+                    onContextMenu={(e) => e.preventDefault()}
+                    onDragStart={(e) => e.preventDefault()}
+                ></div>
+                
+                {/* 💡 AREA TENGAH SENGAJA DI-KOSONGKAN (TANPA OVERLAY) AGAR TOMBOL PLAY/PAUSE DAN TIMELINE TETAP BISA DIKLIK */}
+            </div>
+        ) : (
+            <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-3">
+                <MonitorPlay size={48} className="opacity-20" />
+                <span className="font-semibold text-sm tracking-wider uppercase">Video tidak tersedia</span>
+            </div>
+        )}
+    </div>
+)}
             {/* 2. PDF SECTION */}
             {activeMaterial.tipe === 'pdf' && (
                 <SecurePDFViewer materialId={activeMaterial.id} />
@@ -167,14 +196,13 @@ export default function MaterialViewer({ activeMaterial }) {
     );
 }
 
-// ✅ SUB-KOMPONEN SECURE PDF BOX (FIXED CENTERED SPINNER & RESPONSIVE SCROLL)
+// Sub-komponen SecurePDFViewer tetap di bawah tanpa ada perubahan fungsi...
 function SecurePDFViewer({ materialId }) {
     const containerRef = useRef();
     const [pdfDoc, setPdfDoc] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // 1. Ambil Dokumen PDF Mentah via Fetch
     useEffect(() => {
         let isCancelled = false;
         const loadPDF = async () => {
@@ -213,7 +241,6 @@ function SecurePDFViewer({ materialId }) {
         loadPDF();
 
         const handleKey = (e) => {
-            // Biarkan tombol whitelist filter global di Show.jsx yang menghandle perizinan zoom browser
             if (e.ctrlKey && ["c", "s", "u", "p"].includes(e.key.toLowerCase())) e.preventDefault();
         };
         document.addEventListener("keydown", handleKey);
@@ -223,7 +250,6 @@ function SecurePDFViewer({ materialId }) {
         };
     }, [materialId]);
 
-    // 2. Setup Intersection Observer (FIX FULL BOX + CENTERED PAGE PLACEHOLDER)
     useEffect(() => {
         if (!pdfDoc || loading) return;
 
@@ -237,8 +263,6 @@ function SecurePDFViewer({ materialId }) {
         for (let i = 1; i <= pdfDoc.numPages; i++) {
             const pageDiv = document.createElement("div");
             pageDiv.id = `pdf-page-container-${i}`;
-            
-            // ✅ Ditambahkan flex-col items-center justify-center agar teks pemuatan berada MUTLAK di tengah box abu-abu
             pageDiv.className = "w-full mb-8 relative min-h-[50vh] flex flex-col items-center justify-center bg-slate-100/30 rounded-xl border border-slate-200/40 shadow-sm overflow-hidden p-1 md:p-2";
 
             const loadingWrapper = document.createElement('div');
@@ -264,7 +288,6 @@ function SecurePDFViewer({ materialId }) {
                     const unscaledViewport = page.getViewport({ scale: 1 });
                     const parentWidth = targetDiv.clientWidth || 800;
 
-                    // Mengukur aspek lebar responsif penuh menyesuaikan orientasi PDF
                     const baseScale = (parentWidth - 16) / unscaledViewport.width;
                     const lowScaleMultiplier = 1.2;
                     const hdScaleMultiplier = 2.2; 
@@ -346,7 +369,6 @@ function SecurePDFViewer({ materialId }) {
                 msUserSelect: "none",
             }}
         >
-            {/* ✅ FIXED MAIN SPINNER POSITION (Mutlak Center Row & Column) */}
             <div className="h-[75vh] overflow-y-auto p-4 md:p-8 scrollbar-thin bg-slate-200/40 flex items-start justify-center relative">
                 {loading && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center m-auto gap-4 bg-slate-50/80 z-10 w-full h-full text-center">

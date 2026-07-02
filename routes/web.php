@@ -13,7 +13,8 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Member\CourseController as MemberCourseController;
 use App\Http\Controllers\Member\ExerciseController;
 use App\Http\Controllers\PaymentCallbackController;
-use App\Http\Controllers\Auth\RegisteredUserController; // 🔥 Ditambahkan agar class bisa dipanggil langsung di bawah
+use App\Http\Controllers\Auth\RegisteredUserController; 
+use App\Http\Controllers\Admin\SessionManagerController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -184,6 +185,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');
 
     Route::resource('posts', PostController::class);
+
+    Route::get('/sessions', [SessionManagerController::class, 'index'])->name('sessions.index');
+    Route::delete('/sessions/{id}', [SessionManagerController::class, 'destroy'])->name('sessions.destroy');
+    
     
 });
 

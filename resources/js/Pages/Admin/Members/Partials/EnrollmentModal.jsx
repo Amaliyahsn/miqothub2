@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, GraduationCap, Plus, Trash2, Clock, CheckCircle2 } from 'lucide-react'; // Ganti BookOpen ke GraduationCap
+import { X, GraduationCap, Plus, Trash2, Clock, CheckCircle2 } from 'lucide-react';
 import { useForm, router } from '@inertiajs/react';
 import { useMemo } from 'react';
 
@@ -54,11 +54,11 @@ export default function EnrollmentModal({ isOpen, onClose, member, allCourses = 
         }
     };
 
-    const getExpiryDate = (dateString) => {
-        if (!dateString) return '-';
+    // Mengubah fungsi formatter agar membaca langsung nilai string tanggal dari database
+    const formatExpiryDate = (dateString) => {
+        if (!dateString) return 'Seterusnya (Lifetime)';
         try {
             const date = new Date(dateString);
-            date.setFullYear(date.getFullYear() + 1); 
             return date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
         } catch (e) { return '-'; }
     };
@@ -123,7 +123,7 @@ export default function EnrollmentModal({ isOpen, onClose, member, allCourses = 
                                                     </h4>
                                                     {course.batch && (
                                                         <span className="text-[10px] font-bold text-blue-700 bg-blue-100/50 border border-blue-200/50 px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0">
-                                                            Batch {course.batch}
+                                                            {course.batch}
                                                         </span>
                                                     )}
                                                 </div>
@@ -132,7 +132,9 @@ export default function EnrollmentModal({ isOpen, onClose, member, allCourses = 
                                                         <CheckCircle2 size={12} strokeWidth={3}/> Aktif
                                                     </span>
                                                     <span className="flex items-center gap-1.5">
-                                                        <Clock size={12}/> Berlaku hingga: {getExpiryDate(course.enrollment_date)}
+                                                        <Clock size={12}/> 
+                                                        {/* Menggunakan data 'tanggal_selesai' sesuai setelan kolom di database */}
+                                                        Berlaku hingga: {formatExpiryDate(course.tanggal_selesai)}
                                                     </span>
                                                 </div>
                                             </div>
@@ -162,7 +164,7 @@ export default function EnrollmentModal({ isOpen, onClose, member, allCourses = 
                                             <option value="" disabled>-- Pilih Kelas yang Tersedia --</option>
                                             {availableCourses.map(c => (
                                                 <option key={`available-course-${c.id}`} value={c.id}>
-                                                    {c.nama || c.name} {c.batch ? `(Batch ${c.batch})` : ''}
+                                                    {c.nama || c.name} {c.batch ? `(${c.batch})` : ''}
                                                 </option>
                                             ))}
                                         </select>
