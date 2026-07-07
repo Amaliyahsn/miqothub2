@@ -6,7 +6,7 @@ import {
     User, Mail, Lock, MapPin, Briefcase,
     ArrowLeft, CheckSquare, Sparkles, Phone,
     ArrowRight, LayoutGrid, CheckCircle2, ShieldCheck,
-    CreditCard, Eye, EyeOff
+    CreditCard, Eye, EyeOff, AlertTriangle
 } from 'lucide-react';
 
 export default function Register({ courses }) {
@@ -48,7 +48,10 @@ export default function Register({ courses }) {
         };
     }, []);
 
-    const toggleCourse = (id) => {
+    const toggleCourse = (id, isFull) => {
+        // ✅ Proteksi: Mencegah pemilihan kelas jika kuota sudah penuh
+        if (isFull) return;
+
         let newCourseIds = [...data.course_ids];
         if (newCourseIds.includes(id)) {
             newCourseIds = newCourseIds.filter(courseId => courseId !== id);
@@ -91,11 +94,13 @@ export default function Register({ courses }) {
         // Alur original Midtrans tetap berjalan di bawah ini tanpa terganggu
         try {
             // 1. Meminta token transaksi ke backend
+            // ✅ Perbaikan: Mengirim 'course_ids' ke backend agar divalidasi kuotanya sebelum token Midtrans terbit
             const response = await axios.post(route('payment.token'), {
                 amount: totalPrice,
                 name: data.name,
                 email: data.email,
-                phone: data.phone || '-'
+                phone: data.phone || '-',
+                course_ids: data.course_ids 
             });
 
             const snapToken = response.data.snap_token;
@@ -140,7 +145,12 @@ export default function Register({ courses }) {
 
         } catch (error) {
             console.error("Midtrans Error:", error);
-            alert("Gagal menyiapkan gerbang pembayaran. Pastikan data identitas diri telah terisi dengan benar.");
+            // ✅ Perbaikan: Tangkap response error khusus (kuota penuh / status 422) yang dikirim dari PaymentController
+            if (error.response && error.response.status === 422) {
+                alert(error.response.data.message || "Gagal melanjutkan pembayaran. Kuota salah satu kelas yang Anda pilih sudah penuh.");
+            } else {
+                alert("Gagal menyiapkan gerbang pembayaran. Pastikan data identitas diri telah terisi dengan benar.");
+            }
             setIsPaymentLoading(false);
         }
     };
@@ -200,20 +210,34 @@ export default function Register({ courses }) {
                                     {activeCourses.map(course => (
                                         <motion.div 
                                             key={course.id} 
-                                            onClick={() => toggleCourse(course.id)}
-                                            className={`min-w-[80vw] md:min-w-full snap-center p-5 rounded-2xl cursor-pointer border-2 transition-all duration-300 group ${data.course_ids.includes(course.id) ? 'bg-slate-800 border-blue-500 shadow-lg shadow-blue-500/20' : 'bg-slate-800/40 border-slate-700/50 hover:border-slate-500'}`}
+                                            onClick={() => toggleCourse(course.id, course.is_full)}
+                                            /* ✅ Perbaikan: Jika 'course.is_full' bernilai true, modifikasi visual menjadi redup dan ubah cursor-not-allowed */
+                                            className={`min-w-[80vw] md:min-w-full snap-center p-5 rounded-2xl border-2 transition-all duration-300 group ${
+                                                course.is_full 
+                                                    ? 'bg-slate-800/20 border-slate-800 opacity-40 cursor-not-allowed select-none' 
+                                                    : data.course_ids.includes(course.id) 
+                                                        ? 'bg-slate-800 border-blue-500 shadow-lg shadow-blue-500/20 cursor-pointer' 
+                                                        : 'bg-slate-800/40 border-slate-700/50 hover:border-slate-500 cursor-pointer'
+                                            }`}
                                         >
                                             <div className="flex justify-between items-start gap-3">
-                                                <h3 className={`font-bold text-sm sm:text-base leading-tight flex-1 transition-colors ${data.course_ids.includes(course.id) ? 'text-blue-400' : 'text-white'}`}>
-                                                    {course.nama}
+                                                <h3 className={`font-bold text-sm sm:text-base leading-tight flex-1 transition-colors ${course.is_full ? 'text-slate-500' : data.course_ids.includes(course.id) ? 'text-blue-400' : 'text-white'}`}>
+                                                    {course.nama} {course.is_full && <span className="text-rose-500 text-xs font-black block mt-1 tracking-wider uppercase">(KUOTA PENUH)</span>}
                                                 </h3>
-                                                <div className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${data.course_ids.includes(course.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-600 text-transparent'}`}>
-                                                    <CheckSquare size={16} strokeWidth={3} />
-                                                </div>
+                                                {/* Sembunyikan checkbox jika kelas penuh atau biarkan kosong ter-lock */}
+                                                {!course.is_full && (
+                                                    <div className={`shrink-0 w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${data.course_ids.includes(course.id) ? 'bg-blue-500 border-blue-500 text-white' : 'border-slate-600 text-transparent'}`}>
+                                                        <CheckSquare size={16} strokeWidth={3} />
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-700/50">
-                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Batch {course.batch}</span>
-                                                <span className="font-black text-white">{formatRupiah(course.harga_coret)}</span>
+                                                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                                                    Batch {course.batch}
+                                                </span>
+                                                <span className={`font-black ${course.is_full ? 'text-slate-600' : 'text-white'}`}>
+                                                    {formatRupiah(course.harga_coret)}
+                                                </span>
                                             </div>
                                         </motion.div>
                                     ))}
@@ -271,6 +295,14 @@ export default function Register({ courses }) {
                             <p className="text-slate-500 text-sm">Pastikan data sudah benar.</p>
                         </div>
 
+                        {/* ✅ Tampilkan Pesan Error Validasi Kuota dari Backend Inertia (Jika Terjadi Kebocoran Terakhir) */}
+                        {errors.course_ids && (
+                            <div className="sm:col-span-2 mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-2xl text-xs font-bold flex items-start gap-2.5">
+                                <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                                <span>{errors.course_ids}</span>
+                            </div>
+                        )}
+
                         <form onSubmit={handleRegisterPayment} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                             <div className="sm:col-span-2">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nama Lengkap</label>
@@ -290,7 +322,6 @@ export default function Register({ courses }) {
                                 {errors.email && <p className="text-rose-500 text-[10px] font-bold mt-1 uppercase">{errors.email}</p>}
                             </div>
 
-                            {/* 🔥 PENAMBAHAN INPUT FIELD PHONE AGAR SELARAS DENGAN KONTROLER */}
                             <div className="sm:col-span-2">
                                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Nomor WhatsApp / HP</label>
                                 <div className="relative">
@@ -345,7 +376,7 @@ export default function Register({ courses }) {
                                                 required
                                             />
 
-                                            <button
+                                        <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
@@ -367,7 +398,7 @@ export default function Register({ courses }) {
                                                 required
                                             />
 
-                                            <button
+                                        <button
                                                 type="button"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"

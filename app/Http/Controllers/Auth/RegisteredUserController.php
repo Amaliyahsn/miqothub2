@@ -23,7 +23,19 @@ class RegisteredUserController extends Controller
 {
     public function create(): Response
     {
-        $courses = Course::where('status', 'onsale')->latest()->get();
+        // ✅ Perbaikan: Ambil data kelas beserta hitungan transaksi terverifikasi secara real-time
+        $courses = Course::where('status', 'onsale')
+            ->withCount(['transactions' => function ($query) {
+                $query->where('status', 'verified');
+            }])
+            ->latest()
+            ->get()
+            ->map(function ($course) {
+                // Sediakan flag penanda kuota penuh agar form pendaftaran publik (Inertia/React) bisa men-disable opsi ini
+                $course->is_full = $course->kuota !== null && $course->transactions_count >= $course->kuota;
+                return $course;
+            });
+
         return Inertia::render('Auth/Register', ['courses' => $courses]);
     }
 
@@ -47,6 +59,23 @@ class RegisteredUserController extends Controller
 
         try {
             return DB::transaction(function () use ($request) {
+                // ✅ Perbaikan optimasi query & double check kuota menggunakan withCount untuk perlindungan ekstra
+                $courses = Course::whereIn('id', $request->course_ids)
+                    ->withCount(['transactions' => function ($query) {
+                        $query->where('status', 'verified');
+                    }])
+                    ->get();
+
+                foreach ($courses as $course) {
+                    if ($course->kuota !== null) {
+                        if ($course->transactions_count >= $course->kuota) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'course_ids' => "Maaf, kuota kelas '{$course->nama}' sudah penuh.",
+                            ]);
+                        }
+                    }
+                }
+
                 // 1. Buat User
                 $user = User::create([
                     'name' => $request->name, 
@@ -60,20 +89,6 @@ class RegisteredUserController extends Controller
                     'umur' => $request->umur,
                     'status_akun' => 'pending', 
                 ]);
-
-                // 2. Ambil Kursus & Validasi Kuota
-                $courses = Course::whereIn('id', $request->course_ids)->get();
-
-                foreach ($courses as $course) {
-                    if ($course->kuota !== null) {
-                        $enrolledCount = $course->transactions()->where('status', 'verified')->count();
-                        if ($enrolledCount >= $course->kuota) {
-                            throw \Illuminate\Validation\ValidationException::withMessages([
-                                'course_ids' => "Maaf, kuota kelas '{$course->nama}' sudah penuh.",
-                            ]);
-                        }
-                    }
-                }
 
                 // 3. Buat Transaksi
                 $totalHarga = $courses->sum(function($course) {

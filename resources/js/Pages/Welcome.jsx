@@ -456,11 +456,15 @@ const [selectedPost, setSelectedPost] = useState(null);
                                     <span className="px-3 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-bold text-blue-900 shadow-sm border border-white">
                                         Batch {course.batch}
                                     </span>
-                                    {course.is_popular && (
+                                    {course.is_full ? (
+                                        <span className="px-3 py-1.5 bg-red-500 rounded-full text-[10px] font-bold text-white shadow-sm">
+                                            Kuota Penuh
+                                        </span>
+                                    ) : course.is_popular ? (
                                         <span className="px-3 py-1.5 bg-orange-500 rounded-full text-[10px] font-bold text-white shadow-sm">
                                             Terpopuler
                                         </span>
-                                    )}
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -517,12 +521,21 @@ const [selectedPost, setSelectedPost] = useState(null);
                                         Detail
                                     </button>
 
-                                    <Link
-                                        href={auth?.user ? route("member.catalog") : route("register")}
-                                        className="py-3 px-2 bg-blue-600 text-white rounded-xl font-bold text-xs text-center shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
-                                    >
-                                        Daftar
-                                    </Link>
+                                    {course.is_full ? (
+                                        <button
+                                            disabled
+                                            className="py-3 px-2 bg-slate-200 text-slate-500 rounded-xl font-bold text-xs text-center cursor-not-allowed shadow-none"
+                                        >
+                                            Penuh
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href={auth?.user ? route("member.catalog") : route("register")}
+                                            className="py-3 px-2 bg-blue-600 text-white rounded-xl font-bold text-xs text-center shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95"
+                                        >
+                                            Daftar
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>

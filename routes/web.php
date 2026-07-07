@@ -24,14 +24,17 @@ use Inertia\Inertia;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    // 1. Ambil Data Courses (Sudah benar)
     $courses = \App\Models\Course::where('status', 'onsale')
         ->with(['chapters.materials' => function ($query) {
             $query->where('is_preview', true);
         }])
+        ->withCount(['transactions' => function ($query) {
+            $query->where('status', 'verified');
+        }])
         ->get()
         ->map(function ($course) {
             $course->thumbnail_url = $course->thumbnail ? asset('storage/' . $course->thumbnail) : null;
+            $course->is_full = $course->kuota !== null && $course->transactions_count >= $course->kuota;
             return $course;
         });
 
