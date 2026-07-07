@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import MemberLayout from '@/Layouts/MemberLayout';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Layout, X, CheckCircle2, ChevronRight, ShoppingBag, Sparkles, CreditCard, ArrowRight } from 'lucide-react';
+import { Layout, X, CheckCircle2, ChevronRight, ShoppingBag, Sparkles, CreditCard, ArrowRight, AlertTriangle } from 'lucide-react';
 import axios from 'axios';
 
 export default function Catalog({ auth, courses }) {
@@ -41,6 +41,9 @@ export default function Catalog({ auth, courses }) {
     };
 
     const openModal = (course) => {
+        // Proteksi tambahan di frontend agar tidak bisa membuka modal jika kuota penuh
+        if (course.is_full) return;
+
         setSelectedCourse(course);
         setData({
             course_id: course.id,
@@ -158,7 +161,7 @@ export default function Catalog({ auth, courses }) {
                                 animate={{ opacity: 1, y: 0 }} 
                                 transition={{ delay: index * 0.1 }}
                                 key={course.id} 
-                                className="bg-white rounded-[1.5rem] p-2 shadow-sm border border-slate-200 flex flex-col hover:shadow-2xl hover:shadow-blue-950/10 hover:-translate-y-1.5 transition-all duration-500 group"
+                                className={`bg-white rounded-[1.5rem] p-2 shadow-sm border flex flex-col hover:shadow-2xl hover:shadow-blue-950/10 transition-all duration-500 group relative ${course.is_full ? 'opacity-75 border-slate-200' : 'border-slate-200 hover:-translate-y-1.5'}`}
                             >
                                 <div className="relative h-44 rounded-t-[1.25rem] rounded-b-xl overflow-hidden bg-slate-100">
                                     {course.thumbnail_url ? (
@@ -169,19 +172,24 @@ export default function Catalog({ auth, courses }) {
                                         </div>
                                     )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-blue-950/90 via-blue-950/10 to-transparent opacity-80 group-hover:opacity-100 transition-opacity"></div>
-                                    <div className="absolute top-3 left-3 z-10">
+                                    <div className="absolute top-3 left-3 z-10 flex gap-2">
                                         <span className="px-3 py-1.5 bg-white/95 text-blue-950 text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">
                                             Batch {course.batch}
                                         </span>
                                     </div>
                                     
-                                    {hasDiscount && (
-                                        <div className="absolute top-3 right-3 z-10">
+                                    {/* Tag Kondisional: Mengutamakan info Kuota Penuh dibanding Promo Diskon */}
+                                    <div className="absolute top-3 right-3 z-10">
+                                        {course.is_full ? (
+                                            <span className="px-3 py-1.5 bg-slate-600 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm flex items-center gap-1">
+                                                <AlertTriangle size={10} /> Habis
+                                            </span>
+                                        ) : hasDiscount ? (
                                             <span className="px-3 py-1.5 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-lg shadow-sm">
                                                 Promo Diskon
                                             </span>
-                                        </div>
-                                    )}
+                                        ) : null}
+                                    </div>
 
                                     <div className="absolute bottom-3 left-4 right-4 z-10">
                                         <h3 className="text-lg font-black text-white leading-snug line-clamp-2">
@@ -197,7 +205,7 @@ export default function Catalog({ auth, courses }) {
                                         {/* ✅ Logika Tampilan Harga dengan desain sejajar menyamping */}
                                         {hasDiscount ? (
                                             <div className="flex items-end gap-2.5">
-                                                <span className="text-3xl font-black text-rose-600 leading-none tracking-tight">
+                                                <span className={`text-3xl font-black leading-none tracking-tight ${course.is_full ? 'text-slate-500' : 'text-rose-600'}`}>
                                                     {formatRupiah(course.harga_coret)}
                                                 </span>
                                                 <span className="text-sm font-bold text-slate-400 line-through mb-0.5">
@@ -206,7 +214,7 @@ export default function Catalog({ auth, courses }) {
                                             </div>
                                         ) : (
                                             <div className="flex items-baseline gap-2">
-                                                <span className="text-3xl font-black text-blue-950 leading-none tracking-tight">
+                                                <span className={`text-3xl font-black leading-none tracking-tight ${course.is_full ? 'text-slate-500' : 'text-blue-950'}`}>
                                                     {formatRupiah(course.harga)}
                                                 </span>
                                             </div>
@@ -218,19 +226,29 @@ export default function Catalog({ auth, courses }) {
                                         <ul className="space-y-2.5">
                                             {features.slice(0, 4).map((fitur, i) => (
                                                 <li key={i} className="flex items-start gap-2.5 text-sm text-slate-600 font-medium">
-                                                    <CheckCircle2 size={16} className="text-blue-600 shrink-0 mt-0.5" strokeWidth={2.5} />
+                                                    <CheckCircle2 size={16} className={`${course.is_full ? 'text-slate-400' : 'text-blue-600'} shrink-0 mt-0.5`} strokeWidth={2.5} />
                                                     <span className="leading-snug">{fitur}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
                                     
-                                    <button 
-                                        onClick={() => openModal(course)} 
-                                        className="mt-auto w-full py-3.5 bg-slate-50 text-blue-950 border border-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-950 hover:text-white transition-all active:scale-95"
-                                    >
-                                        Daftar Sekarang <ChevronRight size={18} />
-                                    </button>
+                                    {/* ✅ Perubahan Utama Tombol Aksi berdasarkan state course.is_full */}
+                                    {course.is_full ? (
+                                        <button 
+                                            disabled
+                                            className="mt-auto w-full py-3.5 bg-slate-100 text-slate-400 border border-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 cursor-not-allowed"
+                                        >
+                                            Kuota Sudah Penuh
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={() => openModal(course)} 
+                                            className="mt-auto w-full py-3.5 bg-slate-50 text-blue-950 border border-slate-200 font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-blue-950 hover:text-white transition-all active:scale-95"
+                                        >
+                                            Daftar Sekarang <ChevronRight size={18} />
+                                        </button>
+                                    )}
                                 </div>
                             </motion.div>
                         );

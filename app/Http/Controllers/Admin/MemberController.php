@@ -14,6 +14,7 @@ use App\Mail\MemberRegistrationRejected;
 use App\Mail\MemberCreated;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class MemberController extends Controller
 {
@@ -66,7 +67,7 @@ class MemberController extends Controller
 
         try {
             // 2. Bungkus dalam Database Transaction agar aman
-            \DB::transaction(function () use ($request) {
+            DB::transaction(function () use ($request) {
                 $rawPassword = $request->password;
 
                 $user = User::create([
@@ -93,38 +94,66 @@ class MemberController extends Controller
 
             return back()->with('success', 'Member berhasil ditambahkan dan email akses telah dikirim.');
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Lemparkan kembali jika itu merupakan error validasi dari enrollCourse agar tertangkap oleh form Inertia
+            throw $e;
         } catch (\Exception $e) {
             // Jika terjadi error (misal email gagal kirim), log error-nya
             \Log::error('Gagal tambah member: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Terjadi kesalahan sistem. Member tidak tersimpan.']);
         }
     }
+
     public function verify(Request $request, User $member)
     {
-        $member->update(['status_akun' => 'aktif']);
+        return DB::transaction(function () use ($member) {
+            // 1. Cari transaksi pending/rejected milik user
+            $transaction = Transaction::where('user_id', $member->id)
+                ->whereIn('status', ['pending', 'rejected']) 
+                ->with('courses')
+                ->first();
 
-        // PERBAIKAN: Menambahkan 'rejected' ke array pencarian.
-        // Ini memungkinkan proses "Unreject" dengan cara memverifikasi ulang transaksi yang sudah ditolak.
-        $transaction = Transaction::where('user_id', $member->id)
-            ->whereIn('status', ['pending', 'rejected']) 
-            ->with('courses')
-            ->first();
+            if (!$transaction) {
+                return back()->with('error', 'Tidak ada data transaksi yang dapat diverifikasi.');
+            }
 
-        if ($transaction) {
+            // 2. Ambil kelas yang terikat pada transaksi ini
+            $firstCourse = $transaction->courses->first();
+
+            if ($firstCourse) {
+                // Ambil data kuota real-time dan hitung pendaftar terverifikasi saat ini
+                $courseRealTime = Course::withCount(['transactions' => function ($query) {
+                    $query->where('status', 'verified');
+                }])->findOrFail($firstCourse->id);
+
+                // Validasi apakah kuota sudah penuh sebelum admin mengubah status ke verified
+                if ($courseRealTime->kuota !== null && $courseRealTime->transactions_count >= $courseRealTime->kuota) {
+                    return back()->with('error', 'Gagal memverifikasi. Kuota kelas "' . $courseRealTime->nama . '" sudah penuh!');
+                }
+            }
+
+            // 3. Jika lolos validasi kuota, lakukan update status akun dan transaksi
+            $member->update(['status_akun' => 'aktif']);
+
+            // Hitung total harga berdasarkan logika diskon yang kamu miliki
+            $totalHarga = $transaction->courses->sum(function($course) {
+                return ($course->harga_coret > 0 && $course->harga_coret < $course->harga) 
+                    ? $course->harga_coret 
+                    : $course->harga;
+            });
+
             $transaction->update([
                 'status' => 'verified',
-                'total_harga' => $transaction->courses->sum('harga')
+                'total_harga' => $totalHarga
             ]);
 
-            $firstCourse = $transaction->courses->first();
-            
-            // Pengiriman email jika Mailable sudah siap
-            if (class_exists(MemberPaymentAccepted::class)) {
+            // 4. Kirim email notifikasi sukses
+            if ($firstCourse && class_exists(MemberPaymentAccepted::class)) {
                 Mail::to($member->email)->send(new MemberPaymentAccepted($member, $firstCourse));
             }
-        }
 
-        return back()->with('success', 'Pembayaran diverifikasi dan akun telah aktif.');
+            return back()->with('success', 'Pembayaran diverifikasi dan akun telah aktif.');
+        });
     }
 
     public function reject(User $member)
@@ -163,27 +192,37 @@ class MemberController extends Controller
             'class_id' => 'nullable|exists:courses,id', // Untuk update akses kelas
         ]);
 
-        $data = $request->only(['name', 'email', 'pekerjaan', 'umur', 'alamat', 'status', 'status_akun']);
+        try {
+            DB::transaction(function () use ($request, $member) {
+                $data = $request->only(['name', 'email', 'pekerjaan', 'umur', 'alamat', 'status', 'status_akun']);
 
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
+                if ($request->filled('password')) {
+                    $data['password'] = Hash::make($request->password);
+                }
+
+                if ($request->hasFile('foto_profile')) {
+                    if ($member->foto_profile) {
+                        Storage::disk('public')->delete($member->foto_profile);
+                    }
+                    $data['foto_profile'] = $request->file('foto_profile')->store('profile_photos', 'public');
+                }
+
+                $member->update($data);
+
+                // Jika ada penambahan kelas di form edit
+                if ($request->filled('class_id')) {
+                    $this->enrollCourse($request, $member);
+                }
+            });
+
+            return back()->with('success', 'Profil member berhasil diperbarui.');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Gagal update member: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Terjadi kesalahan sistem saat memperbarui profil.']);
         }
-
-        if ($request->hasFile('foto_profile')) {
-            if ($member->foto_profile) {
-                Storage::disk('public')->delete($member->foto_profile);
-            }
-            $data['foto_profile'] = $request->file('foto_profile')->store('profile_photos', 'public');
-        }
-
-        $member->update($data);
-
-        // Jika ada penambahan kelas di form edit
-        if ($request->filled('class_id')) {
-            $this->enrollCourse($request, $member);
-        }
-
-        return back()->with('success', 'Profil member berhasil diperbarui.');
     }
 
     public function destroy(User $member)
@@ -197,34 +236,45 @@ class MemberController extends Controller
 
     public function enrollCourse(Request $request, User $member)
     {
-        // Mengakomodasi key 'course_id' (dari modal tambah) atau 'class_id' (dari form edit)
         $targetId = $request->course_id ?? $request->class_id;
+        if (!$targetId) return; 
 
-        if (!$targetId) {
-            return; 
+        // Optimasi pembacaan hitungan pendaftar verified dengan model query langsung
+        $course = Course::withCount(['transactions' => function ($query) {
+            $query->where('status', 'verified');
+        }])->findOrFail($targetId);
+
+        // VALIDASI KUOTA: Cek sebelum transaksi dibuat
+        if ($course->kuota !== null) {
+            if ($course->transactions_count >= $course->kuota) {
+                // Menggunakan ValidationException agar error muncul di form modal Admin bawaan Inertia
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'course_id' => 'Kuota kelas "' . $course->nama . '" sudah penuh.',
+                    'class_id' => 'Kuota kelas "' . $course->nama . '" sudah penuh.',
+                ]);
+            }
         }
 
-        $course = Course::findOrFail($targetId);
-
-        // Cek apakah user sudah punya akses ke kelas ini (menghindari duplikasi)
         $exists = $member->transactions()->whereHas('courses', function($q) use ($course) {
             $q->where('courses.id', $course->id);
         })->exists();
 
-        if ($exists) {
-            return;
-        }
+        if ($exists) return;
+
+        $finalPrice = ($course->harga_coret > 0 && $course->harga_coret < $course->harga) 
+            ? $course->harga_coret 
+            : $course->harga;
 
         $transaction = Transaction::create([
             'user_id' => $member->id,
             'kode_transaksi' => 'MANUAL-' . date('Ymd') . '-' . strtoupper(uniqid()),
-            'total_harga' => $course->harga ?? 0, 
+            'total_harga' => $finalPrice, 
             'status' => 'verified',
             'bukti_pembayaran' => 'Input Admin',
         ]);
 
         $transaction->courses()->attach($course->id, [
-            'harga_saat_beli' => $course->harga ?? 0
+            'harga_saat_beli' => $finalPrice
         ]);
     }
 

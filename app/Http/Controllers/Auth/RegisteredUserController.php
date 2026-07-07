@@ -61,9 +61,26 @@ class RegisteredUserController extends Controller
                     'status_akun' => 'pending', 
                 ]);
 
-                // 2. Buat Transaksi
+                // 2. Ambil Kursus & Validasi Kuota
                 $courses = Course::whereIn('id', $request->course_ids)->get();
-                $totalHarga = $courses->sum('harga_coret'); 
+
+                foreach ($courses as $course) {
+                    if ($course->kuota !== null) {
+                        $enrolledCount = $course->transactions()->where('status', 'verified')->count();
+                        if ($enrolledCount >= $course->kuota) {
+                            throw \Illuminate\Validation\ValidationException::withMessages([
+                                'course_ids' => "Maaf, kuota kelas '{$course->nama}' sudah penuh.",
+                            ]);
+                        }
+                    }
+                }
+
+                // 3. Buat Transaksi
+                $totalHarga = $courses->sum(function($course) {
+                    return ($course->harga_coret > 0 && $course->harga_coret < $course->harga) 
+                        ? $course->harga_coret 
+                        : $course->harga;
+                });
 
                 $transaction = Transaction::create([
                     'user_id' => $user->id,
@@ -74,14 +91,16 @@ class RegisteredUserController extends Controller
                     'snap_token' => $request->snap_token ?? null, 
                 ]);
 
-                // 3. Attach Kursus ke Pivot Table
                 $pivotData = [];
                 foreach ($courses as $course) {
-                    $pivotData[$course->id] = ['harga_saat_beli' => $course->harga_coret]; 
+                    $price = ($course->harga_coret > 0 && $course->harga_coret < $course->harga) 
+                        ? $course->harga_coret 
+                        : $course->harga;
+                    $pivotData[$course->id] = ['harga_saat_beli' => $price]; 
                 }
                 $transaction->courses()->attach($pivotData);
 
-                // 4. Bungkus Data Email (Dipakai Bersama)
+                // 4. Kirim Email & Event
                 $dataEmail = [
                     'nama_member' => $request->name,
                     'email_member' => $request->email,
@@ -89,14 +108,12 @@ class RegisteredUserController extends Controller
                     'metode_pembayaran' => 'Midtrans Payment Gateway (Otomatis)',
                 ];
 
-                // Kirim Email Ke Admin
                 try {
                     Mail::to('miqothub@gmail.com')->send(new AdminPaymentNotification($dataEmail));
                 } catch (\Exception $mailException) {
                     Log::warning('Email notifikasi admin gagal dikirim: ' . $mailException->getMessage());
                 }
 
-                // 🔥 5. Kirim Email Ke Member (Aman dari pembatalan rollback DB jika gagal)
                 try {
                     Mail::to($request->email)->send(new MemberRegistrationNotification($dataEmail));
                 } catch (\Exception $mailMemberException) {
@@ -108,9 +125,11 @@ class RegisteredUserController extends Controller
                 return redirect()->route('login')->with('success', 'Pendaftaran berhasil! Akun Anda sedang diverifikasi.');
             }); 
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e; // Lempar kembali ke frontend agar error muncul di form
         } catch (\Exception $e) {
             Log::error('Gagal Registrasi: ' . $e->getMessage());
-            return back()->withErrors(['email' => 'Terjadi kesalahan saat menyimpan data pendaftaran. Silakan hubungi admin.']);
+            return back()->withErrors(['email' => 'Terjadi kesalahan sistem. Silakan hubungi admin.']);
         }
     }
 

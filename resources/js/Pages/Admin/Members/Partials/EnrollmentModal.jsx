@@ -5,7 +5,8 @@ import { useMemo } from 'react';
 
 export default function EnrollmentModal({ isOpen, onClose, member, allCourses = [] }) {
     // Hooks harus di paling atas agar selalu terpanggil
-    const { data, setData, post, processing, reset } = useForm({ 
+    // ✅ Tambahkan 'errors' untuk menangkap pesan validasi kuota penuh dari backend
+    const { data, setData, post, processing, reset, errors } = useForm({ 
         course_id: '' 
     });
 
@@ -133,7 +134,6 @@ export default function EnrollmentModal({ isOpen, onClose, member, allCourses = 
                                                     </span>
                                                     <span className="flex items-center gap-1.5">
                                                         <Clock size={12}/> 
-                                                        {/* Menggunakan data 'tanggal_selesai' sesuai setelan kolom di database */}
                                                         Berlaku hingga: {formatExpiryDate(course.tanggal_selesai)}
                                                     </span>
                                                 </div>
@@ -153,36 +153,50 @@ export default function EnrollmentModal({ isOpen, onClose, member, allCourses = 
                             {/* Add New Enrollment */}
                             <div className="border-t border-slate-100 pt-8 mt-4">
                                 <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Tambahkan ke Kelas Baru</h3>
-                                <form onSubmit={handleEnroll} className="flex flex-col sm:flex-row gap-3">
-                                    <div className="flex-1 relative">
-                                        <select 
-                                            value={data.course_id} 
-                                            onChange={e => setData('course_id', e.target.value)} 
-                                            className="w-full rounded-xl border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 py-3.5 px-4 text-sm font-semibold outline-none transition-colors cursor-pointer appearance-none shadow-sm" 
-                                            required
-                                        >
-                                            <option value="" disabled>-- Pilih Kelas yang Tersedia --</option>
-                                            {availableCourses.map(c => (
-                                                <option key={`available-course-${c.id}`} value={c.id}>
-                                                    {c.nama || c.name} {c.batch ? `(${c.batch})` : ''}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                                            <Plus size={16} />
+                                <form onSubmit={handleEnroll} className="flex flex-col gap-3">
+                                    <div className="flex flex-col sm:flex-row gap-3">
+                                        <div className="flex-1 relative">
+                                            {/* ✅ Border dinamis berubah merah (border-rose-500) jika mendeteksi error dari backend */}
+                                            <select 
+                                                value={data.course_id} 
+                                                onChange={e => setData('course_id', e.target.value)} 
+                                                className={`w-full rounded-xl bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-blue-500/20 py-3.5 px-4 text-sm font-semibold outline-none transition-colors cursor-pointer appearance-none shadow-sm ${errors.course_id ? 'border-rose-500 ring-rose-500/20' : 'border-slate-200'}`} 
+                                                required
+                                            >
+                                                <option value="" disabled>-- Pilih Kelas yang Tersedia --</option>
+                                                {availableCourses.map(c => (
+                                                    <option key={`available-course-${c.id}`} value={c.id}>
+                                                        {c.nama || c.name} {c.batch ? `(${c.batch})` : ''}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-10 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                                                <Plus size={16} />
+                                            </div>
                                         </div>
+                                        <button 
+                                            type="submit" 
+                                            disabled={!data.course_id || processing} 
+                                            className="px-6 py-3.5 bg-blue-900 text-white rounded-xl font-bold hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md shrink-0 text-sm"
+                                        >
+                                            {processing ? 'Memproses...' : (
+                                                <>
+                                                    <Plus size={18} strokeWidth={2.5}/> Masukkan Kelas
+                                                </>
+                                            )}
+                                        </button>
                                     </div>
-                                    <button 
-                                        type="submit" 
-                                        disabled={!data.course_id || processing} 
-                                        className="px-6 py-3.5 bg-blue-900 text-white rounded-xl font-bold hover:bg-blue-800 disabled:opacity-70 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-md shrink-0 text-sm"
-                                    >
-                                        {processing ? 'Memproses...' : (
-                                            <>
-                                                <Plus size={18} strokeWidth={2.5}/> Masukkan Kelas
-                                            </>
-                                        )}
-                                    </button>
+
+                                    {/* ✅ Blok Peringatan Baru: Teks muncul otomatis jika kuota kelas sudah penuh */}
+                                    {errors.course_id && (
+                                        <motion.p 
+                                            initial={{ opacity: 0, y: -5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="text-xs font-bold text-rose-600 mt-1 pl-1"
+                                        >
+                                            {errors.course_id}
+                                        </motion.p>
+                                    )}
                                 </form>
                             </div>
                         </div>

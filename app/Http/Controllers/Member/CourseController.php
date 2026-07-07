@@ -90,9 +90,18 @@ class CourseController extends Controller
                 $query->whereNull('tanggal_selesai')
                       ->orWhere('tanggal_selesai', '>=', now());
             })
+            // Tambahkan hitungan jumlah transaksi yang sudah berstatus 'verified'
+            ->withCount(['transactions' => function ($query) {
+                $query->where('status', 'verified');
+            }])
             ->get()
             ->map(function ($course) {
                 $course->thumbnail_url = $course->thumbnail ? asset('storage/' . $course->thumbnail) : null;
+                
+                // Tambahkan flag penanda apakah kuota sudah penuh
+                // Kamu bisa gunakan property 'is_full' ini di React/Inertia untuk men-disable tombol "Beli"
+                $course->is_full = $course->transactions_count >= $course->kuota;
+                
                 return $course;
             });
 
@@ -111,11 +120,19 @@ class CourseController extends Controller
             'bukti_pembayaran' => 'required|image|mimes:jpeg,png,jpg|max:2048',
         ]);
 
-        $course = Course::findOrFail($request->course_id);
+        // Ambil data course dan hitung jumlah pendaftar yang sudah terverifikasi (verified)
+        $course = Course::withCount(['transactions' => function ($query) {
+            $query->where('status', 'verified');
+        }])->findOrFail($request->course_id);
 
         // PROTEKSI DOUBLE: Cek lagi apakah kelas sudah expired tepat sebelum bayar
         if ($course->tanggal_selesai && Carbon::parse($course->tanggal_selesai)->isPast()) {
             return redirect()->back()->with('error', 'Gagal! Pendaftaran untuk kelas ini sudah ditutup.');
+        }
+
+        // VALIDASI KUOTA: Cek jika jumlah transaksi yang verified sudah menyentuh atau melebihi kuota kelas
+        if ($course->transactions_count >= $course->kuota) {
+            return redirect()->back()->with('error', 'Maaf, kuota untuk kelas ini sudah penuh.');
         }
 
         $buktiPath = $request->file('bukti_pembayaran')->store('bukti_transfer', 'public');
